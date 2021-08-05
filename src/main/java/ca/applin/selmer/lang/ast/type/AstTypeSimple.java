@@ -1,6 +1,6 @@
 package ca.applin.selmer.lang.ast.type;
 
-public class AstTypeSimple implements AstType {
+public class AstTypeSimple extends AstType {
     public String name;
     public AstTypeSimple(String name) {
         this.name = name;

@@ -1,5 +1,7 @@
 package ca.applin.selmer.lang.ast;
 
-public abstract class AstDeclaration implements Ast {
+import java.util.Optional;
+
+public abstract class AstDeclaration extends Ast {
 
 }

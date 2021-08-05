@@ -6,16 +6,25 @@ import Base ;
     import java.util.*;
 }
 
+
+
+
+// *****************************
+//  LANG
+// *****************************
 lang returns [ Ast ast ]
   : decl { $ast = $decl.ast; }
   | expr { $ast = $expr.ast; }
+  | stmt { $ast = $stmt.ast; }
   ;
 
 
 
 
 
-// TYPES
+// *****************************
+//  TYPES
+// *****************************
 type returns [ AstType ast ]
   : typeList ARROW type
     { $ast = new AstTypeFunction($typeList.types, $type.ast); } #funcManyType
@@ -23,6 +32,8 @@ type returns [ AstType ast ]
     { List<AstType> args = new ArrayList();
       args.add($a.ast);
       $ast = new AstTypeFunction(args, $r.ast); } #funcOneType
+  | sumType
+    { $ast = $sumType.ast; } #typeSum
   | arrayType
     { $ast = $arrayType.ast; } #typeArray
   | tupleType
@@ -32,66 +43,82 @@ type returns [ AstType ast ]
   | simpleType
     { $ast = new AstTypeSimple($simpleType.s); } #typeSimple
   | '()'
-     { $ast = AstType.UNIT; } #unit
+    { $ast = AstType.UNIT; } #unit
   ;
 
 typeList returns [ List<AstType> types ]
   : '(' type (',' type)* ')'
-  { $types = $ctx.type().stream().map(t -> t.ast).toList(); }
+    { $types = $ctx.type().stream().map(t -> t.ast).toList(); }
+  ;
+
+sumTypeElem returns [ AstSumType.SumTypeConstructor elem ]
+  : id=ID type { $elem = new AstSumType.SumTypeConstructor($id.text, $type.ast); }
+  ;
+
+// Either A b :: Type = Left A | Right B
+// IntOrString :: Type = AnInt Int | AString String
+// errorOrInt :: Either Int Error = Left(10)
+sumType returns [ AstSumType ast ]
+  : ste+=sumTypeElem ('|' ste+=sumTypeElem)+
+    { $ast = new AstSumType($ste.stream().map(elem -> elem.elem).toList()); }
   ;
 
 genericType returns [ AstTypePoly ast ]
   : simpleType (ID)+
-  { $ast = new AstTypePoly($simpleType.text, $ctx.ID().stream().map(ParseTree::getText).toList()); }
+    { $ast = new AstTypePoly($simpleType.text, $ctx.ID().stream().map(ParseTree::getText).toList()); }
   ;
 
 simpleType returns [ String s ]
   : ID
-  { $s = $ID.text; }
+    { $s = $ID.text; }
   ;
 
 tupleType returns [ List<AstType> types ]
   : t=typeList { $types = $t.types; } ;
 
 arrayType returns [ AstType ast ]
-  :  '[' type ']'
-  { $ast = new AstTypeArray($type.ast); }
+  : '[' type ']'
+    { $ast = new AstTypeArray($type.ast); }
   ;
 
 
 
 
 
-// DECLARATIONS
-/*
-Person A :: Type {
-  name: String
-  age: Int = 0
-  some: Maybe A = Nothing
-
-}
-
-*/
-decl returns [ AstDeclaration ast ]
-  : typeDecl { $ast = $typeDecl.ast; }
-  | structDecl
-  | inferedVarDecl { $ast = $inferedVarDecl.ast; }
-  | varDecl { $ast = $varDecl.ast; }
+// *****************************
+//  DECLARATIONS
+// *****************************
+decl returns [ Ast ast ]
+  : typeDecl ('\n' | ';' )        { $ast = $typeDecl.ast; }
+  | structDecl ('\n' | ';')       { $ast = $structDecl.ast; }
+  | inferedVarDecl ('\n' | ';')   { $ast = $inferedVarDecl.ast; }
+  | varDecl ('\n' | ';')          { $ast = $varDecl.ast; }
   ;
 
 typeDecl returns [ AstTypeDeclaration ast ]
-  : gen=genericType DOUBLE_COLON KEYWORD_TYPE EQ t=type ('\n' | ';' )*
+  : gen=genericType DOUBLE_COLON KEYWORD_TYPE EQ t=type
     { $ast = new AstTypeDeclaration($gen.ast.name, $gen.ast.polyArg, $t.ast); }
-  | sim=simpleType DOUBLE_COLON KEYWORD_TYPE EQ t=type ('\n' | ';' )*
+  | sim=simpleType DOUBLE_COLON KEYWORD_TYPE EQ t=type
     { $ast = new AstTypeDeclaration($sim.s, new ArrayList(), $t.ast); }
   ;
 
-structMember
-  : ids+=ID (ids+=ID)* COLON type (EQ expr)? ;
+structDecl returns [ AstStructDeclaration ast ]
+  : gen=genericType DOUBLE_COLON KEYWORD_TYPE '{' sml=structMemberList '}'
+    { $ast = new AstStructDeclaration($gen.ast.name, $gen.ast.polyArg, $sml.list); }
+  | sim=simpleType DOUBLE_COLON KEYWORD_TYPE '{' sml=structMemberList '}'
+    { $ast = new AstStructDeclaration($sim.s, new ArrayList(), $sml.list); }
+  ;
 
-structDecl
-  : gen=genericType DOUBLE_COLON KEYWORD_TYPE '{' structMember ('\n' | ';' structMember)* '}'
-  | sim=simpleType DOUBLE_COLON KEYWORD_TYPE '{' structMember ('\n' | ';' structMember)* '}'
+structMemberList returns [ List<AstStructMemberDeclaration> list ]
+  : (sm+=structMember (('\n' | ';') sm+=structMember)*)?
+    { $list = $sm == null ? new ArrayList() : $sm.stream().map(ct -> ct.ast).toList(); }
+  ;
+
+structMember returns [ AstStructMemberDeclaration ast ]
+  : varDecl
+    { $ast = new AstStructMemberDeclaration($varDecl.ast.varName, $varDecl.ast.type, $varDecl.ast.initExpr); }
+  | inferedVarDecl
+    { $ast = new AstStructMemberDeclaration($inferedVarDecl.ast.varName, $inferedVarDecl.ast.type, $inferedVarDecl.ast.initExpr); }
   ;
 
 inferedVarDecl returns [ AstVariableDeclaration ast ]
@@ -100,7 +127,7 @@ inferedVarDecl returns [ AstVariableDeclaration ast ]
   ;
 
 varDecl returns [ AstVariableDeclaration ast ]
-  : id=ID COLON t=type (EQ ex=expr)? ('\n' | ';')
+  : id=ID COLON t=type (EQ ex=expr)?
     { $ast = new AstVariableDeclaration($id.text, $t.ast, $ctx.expr() == null ? null : $ex.ast); }
   ;
 
@@ -108,7 +135,9 @@ varDecl returns [ AstVariableDeclaration ast ]
 
 
 
-// EXPRESSIONS
+// *****************************
+//  EXPRESSIONS
+// *****************************
 expr returns [ AstExpression ast ]
   : '(' ex=expr ')' { $ast = $ex.ast; } #parenExpr
   | left=expr op=(DIV | TIMES) right=expr
@@ -127,7 +156,7 @@ expr returns [ AstExpression ast ]
     #postUnopExpr
   | name=ID '(' (e+=expr (',' e+=expr)*)?  ')'
     { $ast = new AstFuncCall($name.text, $e.stream().map(expr -> expr.ast).toList()); }
-    #funcCallExpr
+    #funcCallExpr // todo: name=ID should be replaced by an expression that could return a function type
   | id=ID
     { $ast = new AstVariableReference($id.text); }
     #varRefExpr
@@ -143,3 +172,12 @@ litteral returns [ AstExpression ast ]
   | d=DOUBLE         { $ast = new AstNumLitteral($d.text, AstNumLitteral.NumberType.FLOAT); }
   | s=STRING_LITERAL { $ast = new AstStringLitteral($s.text); }
   ;
+
+
+// *****************************
+//  STATEMENTS
+// *****************************
+stmt returns [ Ast ast ]
+  :
+  ;
+

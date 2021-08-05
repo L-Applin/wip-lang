@@ -3,7 +3,7 @@ package ca.applin.selmer.lang.ast.type;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AstTypeTuple implements AstType {
+public class AstTypeTuple extends AstType {
 
     List<AstType> types;
 

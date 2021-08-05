@@ -2,8 +2,8 @@ package ca.applin.selmer.lang.ast.type;
 
 import ca.applin.selmer.lang.ast.Ast;
 
-public interface AstType extends Ast {
-    AstType UNKNOWN = new AstType() {
+public abstract class AstType extends Ast {
+    public static final AstType UNKNOWN = new AstType() {
         @Override
         public boolean isKnown() {
             return false;
@@ -11,17 +11,17 @@ public interface AstType extends Ast {
 
         @Override
         public String toString() {
-            return "<UNKNOWN>";
+            return "<UNKNOWN/>";
         }
     };
 
-    AstType UNIT = new AstType() {
+    public static final AstType UNIT = new AstType() {
         @Override
         public String toString() {
             return "()";
         }
     };
 
-    default boolean isKnown() { return true; }
+    public boolean isKnown() { return true; }
 }
 

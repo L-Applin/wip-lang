@@ -1,5 +1,13 @@
 package ca.applin.selmer.lang.ast;
 
-public abstract class AstExpression implements Ast {
+import java.util.Optional;
+
+public abstract class AstExpression extends Ast {
+    public Ast next;
+
+    @Override
+    public Optional<Ast> next() {
+        return Optional.ofNullable(next);
+    }
 
 }
