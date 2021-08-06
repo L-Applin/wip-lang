@@ -9,11 +9,15 @@ public enum Operator {
 
     PLUS_EQ         ("+="),
     MINUS_EQ        ("-="),
-    DOUBLE_COLON    ("::"),
     PLUS_PLUS       ("++"),
     MINUS_MINUS     ("--"),
     LOGICAL_OR      ("||"),
     LOGICAL_AND     ("&&"),
+    DOUBLE_EQ       ("=="),
+    GT              (">"),
+    LT              ("<"),
+    GT_EQ           (">="),
+    LT_E            ("<="),
     EQ              ("="),
     PLUS            ("+"),
     MINUS           ("-"),
@@ -21,6 +25,7 @@ public enum Operator {
     DIV             ("/"),
     BIT_OR          ("|"),
     BIT_AND         ("&"),
+    MOD             ("%")
     ;
 
     static Map<String, Operator> opMap = Stream.of(Operator.values()).collect(Collectors.toMap(

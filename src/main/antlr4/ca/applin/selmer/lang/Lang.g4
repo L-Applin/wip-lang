@@ -22,6 +22,11 @@ lang returns [ Ast ast ]
 
 
 
+
+
+
+
+
 // *****************************
 //  TYPES
 // *****************************
@@ -55,9 +60,6 @@ sumTypeElem returns [ AstSumType.SumTypeConstructor elem ]
   : id=ID type { $elem = new AstSumType.SumTypeConstructor($id.text, $type.ast); }
   ;
 
-// Either A b :: Type = Left A | Right B
-// IntOrString :: Type = AnInt Int | AString String
-// errorOrInt :: Either Int Error = Left(10)
 sumType returns [ AstSumType ast ]
   : ste+=sumTypeElem ('|' ste+=sumTypeElem)+
     { $ast = new AstSumType($ste.stream().map(elem -> elem.elem).toList()); }
@@ -80,6 +82,10 @@ arrayType returns [ AstType ast ]
   : '[' type ']'
     { $ast = new AstTypeArray($type.ast); }
   ;
+
+
+
+
 
 
 
@@ -135,19 +141,29 @@ varDecl returns [ AstVariableDeclaration ast ]
 
 
 
+
+
+
+
 // *****************************
 //  EXPRESSIONS
 // *****************************
 expr returns [ AstExpression ast ]
   : '(' ex=expr ')' { $ast = $ex.ast; } #parenExpr
+  | left=expr MOD right=expr
+     { $ast = new AstBinop($left.ast, $right.ast, Operator.MOD); }  #binopEqComp
   | left=expr op=(DIV | TIMES) right=expr
     { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); } #binopTimesDivExpr
   | left=expr op=(MINUS | PLUS) right=expr
     { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); } #binopPlusMinusExpr
-  | left=expr op=(LOGICAL_OR | LOGICAL_AND) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); } #binopLogExpr
   | left=expr op=(BIT_OR | BIT_AND) right=expr
     { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }  #binopBitExpr
+  | left=expr op=(LOGICAL_OR | LOGICAL_AND) right=expr
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); } #binopLogExpr
+  | left=expr op=(GT | LT | GT_EQ | LT_EQ) right=expr
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }  #binopLogicalExpr
+  | left=expr DOUBLE_EQ right=expr
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.DOUBLE_EQ); }  #binopEqComp
   | unop ex=expr
     { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.PRE); }
     #preUnopExpr
@@ -174,10 +190,33 @@ litteral returns [ AstExpression ast ]
   ;
 
 
+
+
+
+
+
+
+
 // *****************************
 //  STATEMENTS
 // *****************************
-stmt returns [ Ast ast ]
-  :
+stmt returns [ AstStatement ast ]
+  : ifStatement { $ast = $ifStatement.ast; }
+  | whileStatement { $ast = $whileStatement.ast; }
+  ;
+
+codeBlock returns [ AstCodeBlock ast ]
+  : '{' (lang ('\n'|';'))* '}'
+    { $ast = new AstCodeBlock($ctx.lang().stream().map(q -> q.ast).toList()); }
+  ;
+
+ifStatement returns [ AstIfStatement ast ]
+  : 'if' e=expr ifBlock=codeBlock ('else' elseBlock=codeBlock)?
+    { $ast = new AstIfStatement($e.ast, $ifBlock.ast, $elseBlock.ast); }
+  ;
+
+whileStatement returns [ AstWhileStatement ast ]
+  : 'while' e=expr codeBlock
+    { $ast = new AstWhileStatement($e.ast, $codeBlock.ast); }
   ;
 
