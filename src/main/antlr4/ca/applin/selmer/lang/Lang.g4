@@ -1,3 +1,13 @@
+// todo
+//   [expr]         struct instanciation
+//   [expr/decl]    function declaration
+//   [expr/decl]    function declaration
+//   [expr]         function call 'ID' should be replaced by an expression that must type resolve to a function trype
+//   [expr]         lambda expression
+
+// solved
+//   [bug:2021-08-08]          code block should be properly seperated by line break or ';'
+
 grammar Lang ;
 import Base ;
 @header {
@@ -13,6 +23,10 @@ import Base ;
 //  LANG
 // *****************************
 lang returns [ Ast ast ]
+  : code EOF { $ast = $code.ast; }
+  ;
+
+code returns [ Ast ast ]
   : decl { $ast = $decl.ast; }
   | expr { $ast = $expr.ast; }
   | stmt { $ast = $stmt.ast; }
@@ -26,30 +40,31 @@ lang returns [ Ast ast ]
 
 
 
-
 // *****************************
 //  TYPES
 // *****************************
 type returns [ AstType ast ]
-  : typeList ARROW type
-    { $ast = new AstTypeFunction($typeList.types, $type.ast); } #funcManyType
-  | a=type ARROW r=type
+  : '(' t=type ')' { $ast = $t.ast; }
+  | <assoc=right> typeList ARROW r=type
+    { $ast = new AstTypeFunction($typeList.types, $r.ast); }
+  | <assoc=right> a=type ARROW r=type
     { List<AstType> args = new ArrayList();
       args.add($a.ast);
-      $ast = new AstTypeFunction(args, $r.ast); } #funcOneType
+      $ast = new AstTypeFunction(args, $r.ast); }
   | sumType
-    { $ast = $sumType.ast; } #typeSum
+    { $ast = $sumType.ast; }
   | arrayType
-    { $ast = $arrayType.ast; } #typeArray
+    { $ast = $arrayType.ast; }
   | tupleType
-    { $ast = new AstTypeTuple($tupleType.types); } #typeTuple
+    { $ast = new AstTypeTuple($tupleType.types); }
   | genericType
-    { $ast = $genericType.ast; } #typeGeneric
+    { $ast = $genericType.ast; }
   | simpleType
-    { $ast = new AstTypeSimple($simpleType.s); } #typeSimple
+    { $ast = new AstTypeSimple($simpleType.s); }
   | '()'
-    { $ast = AstType.UNIT; } #unit
+    { $ast = AstType.UNIT; }
   ;
+
 
 typeList returns [ List<AstType> types ]
   : '(' type (',' type)* ')'
@@ -57,7 +72,7 @@ typeList returns [ List<AstType> types ]
   ;
 
 sumTypeElem returns [ AstSumType.SumTypeConstructor elem ]
-  : id=ID type { $elem = new AstSumType.SumTypeConstructor($id.text, $type.ast); }
+  : id=ID t=type? { $elem = new AstSumType.SumTypeConstructor($id.text, $ctx.t == null ? null : $t.ast); }
   ;
 
 sumType returns [ AstSumType ast ]
@@ -95,10 +110,11 @@ arrayType returns [ AstType ast ]
 //  DECLARATIONS
 // *****************************
 decl returns [ Ast ast ]
-  : typeDecl ('\n' | ';' )        { $ast = $typeDecl.ast; }
-  | structDecl ('\n' | ';')       { $ast = $structDecl.ast; }
-  | inferedVarDecl ('\n' | ';')   { $ast = $inferedVarDecl.ast; }
-  | varDecl ('\n' | ';')          { $ast = $varDecl.ast; }
+  : typeDecl        { $ast = $typeDecl.ast; }
+  | structDecl      { $ast = $structDecl.ast; }
+  | funcDecl        { $ast = $funcDecl.ast; }
+  | inferedVarDecl  { $ast = $inferedVarDecl.ast; }
+  | varDecl         { $ast = $varDecl.ast; }
   ;
 
 typeDecl returns [ AstTypeDeclaration ast ]
@@ -115,8 +131,48 @@ structDecl returns [ AstStructDeclaration ast ]
     { $ast = new AstStructDeclaration($sim.s, new ArrayList(), $sml.list); }
   ;
 
+funcArg returns [ AstFunctionDeclaration.AstFunctionArgs ast ]
+  : name=ID (COLON t=type)?
+    { $ast = new AstFunctionDeclaration.AstFunctionArgs($name.text, _localctx.t == null ? AstType.UNKNOWN : $t.ast); }
+  ;
+
+funcArgList returns [ List<AstFunctionDeclaration.AstFunctionArgs> list ]
+  : fa+=funcArg (',' fa+=funcArg)*
+    { $list = $fa.stream().map(c -> c.ast).toList(); }
+  ;
+
+funcBody returns [ AstFunctionDeclaration.AstFunctionBody ast ]
+  // empty body
+  : '{' '}'
+    { $ast = new AstFunctionDeclaration.AstFunctionBody(new ArrayList()); }
+  // single expr no return
+  | expr
+    { $ast =  new AstFunctionDeclaration.AstFunctionBody(new ArrayList(){{ add($expr.ast); }}); }
+  // full code block, maybe return
+  | '{' c+=codeBlockContent (c+=codeBlockContent)* '}'
+    { $ast = new AstFunctionDeclaration.AstFunctionBody($c.stream().map(code -> code.ast).toList()); }
+  ;
+
+funcDecl returns [ AstFunctionDeclaration ast ]
+  // single argument no parentheses around
+  : name=ID DOUBLE_COLON (t=type EQ)? arg=funcArg ARROW body=funcBody
+    { $ast = new AstFunctionDeclaration(
+             $name.text,
+             _localctx.t == null ? AstType.UNKNOWN : $t.ast,
+             new ArrayList() {{ add($arg.ast); }},
+             $body.ast);
+     }
+  | name=ID DOUBLE_COLON (t=type EQ)? '(' fa=funcArgList? ')' ARROW body=funcBody
+    { $ast = new AstFunctionDeclaration(
+              $name.text,
+              _localctx.t == null ? AstType.UNKNOWN : $t.ast,
+              $fa.list,
+              $body.ast);
+    }
+ ;
+
 structMemberList returns [ List<AstStructMemberDeclaration> list ]
-  : (sm+=structMember (('\n' | ';') sm+=structMember)*)?
+  : (sm+=structMember (/*('\n' | ';')*/ sm+=structMember)*)?
     { $list = $sm == null ? new ArrayList() : $sm.stream().map(ct -> ct.ast).toList(); }
   ;
 
@@ -149,34 +205,31 @@ varDecl returns [ AstVariableDeclaration ast ]
 //  EXPRESSIONS
 // *****************************
 expr returns [ AstExpression ast ]
-  : '(' ex=expr ')' { $ast = $ex.ast; } #parenExpr
+  : '(' ex=expr ')' { $ast = $ex.ast; }
   | left=expr MOD right=expr
-     { $ast = new AstBinop($left.ast, $right.ast, Operator.MOD); }  #binopEqComp
+     { $ast = new AstBinop($left.ast, $right.ast, Operator.MOD); }
   | left=expr op=(DIV | TIMES) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); } #binopTimesDivExpr
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
   | left=expr op=(MINUS | PLUS) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); } #binopPlusMinusExpr
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
   | left=expr op=(BIT_OR | BIT_AND) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }  #binopBitExpr
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
   | left=expr op=(LOGICAL_OR | LOGICAL_AND) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); } #binopLogExpr
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
   | left=expr op=(GT | LT | GT_EQ | LT_EQ) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }  #binopLogicalExpr
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
   | left=expr DOUBLE_EQ right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.DOUBLE_EQ); }  #binopEqComp
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.DOUBLE_EQ); }
   | unop ex=expr
     { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.PRE); }
-    #preUnopExpr
   | ex=expr unop
     { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.POST); }
-    #postUnopExpr
-  | name=ID '(' (e+=expr (',' e+=expr)*)?  ')'
+  | name=ID '(' (e+=expr (',' e+=expr)*)?  ')' // function call
     { $ast = new AstFuncCall($name.text, $e.stream().map(expr -> expr.ast).toList()); }
-    #funcCallExpr // todo: name=ID should be replaced by an expression that could return a function type
+    // todo: name=ID should be replaced by an expression that could return a function type
   | id=ID
     { $ast = new AstVariableReference($id.text); }
-    #varRefExpr
-  | litteral { $ast = $litteral.ast; } #litteralExpr
+  | litteral { $ast = $litteral.ast; }
   ;
 
 unop
@@ -201,22 +254,34 @@ litteral returns [ AstExpression ast ]
 //  STATEMENTS
 // *****************************
 stmt returns [ AstStatement ast ]
-  : ifStatement { $ast = $ifStatement.ast; }
+  : codeBlock      { $ast = $codeBlock.ast; }
+  | ifStatement    { $ast = $ifStatement.ast; }
   | whileStatement { $ast = $whileStatement.ast; }
   ;
 
+codeBlockContent returns [ Ast ast ]
+  : s=stmt
+    { $ast = $s.ast; }
+  | d=decl
+    { $ast = $d.ast; }
+  | KEYWORD_RETURN e=expr
+    { $ast = new AstReturnExpression($e.ast); }
+  ;
+
 codeBlock returns [ AstCodeBlock ast ]
-  : '{' (lang ('\n'|';'))* '}'
-    { $ast = new AstCodeBlock($ctx.lang().stream().map(q -> q.ast).toList()); }
+  : '{' '}'
+    { $ast = new AstCodeBlock(new ArrayList()); }
+  | '{' c+=codeBlockContent (c+=codeBlockContent)* '}'
+    { $ast = new AstCodeBlock($c.stream().map(q -> q.ast).toList()); }
   ;
 
 ifStatement returns [ AstIfStatement ast ]
-  : 'if' e=expr ifBlock=codeBlock ('else' elseBlock=codeBlock)?
+  : KEYWORD_IF e=expr ifBlock=codeBlock (KEYWORD_ELSE elseBlock=codeBlock)?
     { $ast = new AstIfStatement($e.ast, $ifBlock.ast, $elseBlock.ast); }
   ;
 
 whileStatement returns [ AstWhileStatement ast ]
-  : 'while' e=expr codeBlock
+  : KEYWORD_WHILE e=expr codeBlock
     { $ast = new AstWhileStatement($e.ast, $codeBlock.ast); }
   ;
 

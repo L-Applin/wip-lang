@@ -5,4 +5,5 @@ import java.util.Optional;
 
 public abstract class AstExpression extends Ast {
     public AstType type;
+    public boolean isReturn;
 }

@@ -6,7 +6,8 @@ public class AstSumType extends AstType {
     public static record SumTypeConstructor(String constructorName, AstType args) {
         @Override
         public String toString() {
-            return "cons:%s args%s".formatted(constructorName, args.toString());
+            return "cons:%s%s"
+                .formatted(constructorName, args == null ? "" : " args:" + args.toString());
         }
     }
 

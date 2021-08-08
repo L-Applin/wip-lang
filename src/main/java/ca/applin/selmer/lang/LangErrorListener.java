@@ -32,6 +32,8 @@ public class LangErrorListener extends BaseErrorListener {
             int charPositionInLine,
             String msg,
             RecognitionException e) {
+//        System.err.println(e.getCtx().getText());
+//        System.err.println(recognizer.getParseInfo().getDecisionInfo());
         errors.add(new ParseError(recognizer, offendingSymbol, line, charPositionInLine, msg, e));
     }
 

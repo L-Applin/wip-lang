@@ -9,14 +9,19 @@ DOUBLE
 STRING_LITERAL
     : '"' (~('"' | '\\' | '\r' | '\n') | '\\' ('"' | '\\'))* '"' ;
 
-KEYWORD_TYPE : 'Type' ;
+KEYWORD_TYPE   : 'Type' ;
+KEYWORD_IF     : 'if' ;
+KEYWORD_ELSE   : 'else' ;
+KEYWORD_WHILE  : 'while' ;
+KEYWORD_RETURN : 'return' ;
 
 ID : IdentifierChars ;
 
 IdentifierChars
-    : [a-zA-Z_]+;
+  : [a-zA-Z_] [a-zA-Z_0-9]*;
 
 
+ARROW         : '->' ;
 PLUS_EQ       : '+=' ;
 MINUS_EQ      : '-=' ;
 DOUBLE_COLON  : '::' ;
@@ -40,6 +45,6 @@ GT            : '>' ;
 LT            : '<' ;
 MOD           : '%' ;
 
-WS                  : (' ' | '\t') -> skip ;
-NEWLINE             : ('\r'? '\n' | '\r')+ -> skip ;
-ARROW               : '->' ;
+WS       : (' ' | '\t') -> skip ;
+NEWLINE  : ('\r'? '\n' | '\n')+ -> skip ;
+SEP      : ';' -> skip ;

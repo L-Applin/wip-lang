@@ -8,4 +8,9 @@ public class AstCodeBlock extends AstStatement {
     public AstCodeBlock(List<Ast> code) {
         this.code = code;
     }
+
+    @Override
+    public String toString() {
+        return "CodeBlock:" + code.toString();
+    }
 }
