@@ -49,6 +49,7 @@ MOD           : '%' ;
 OPEN_PAREN    : '(' ;
 CLOSE_PAREN   : ')' ;
 COMMA         : ',' ;
+DOT           : '.' ;
 
 //UNIT : '()' ;
 

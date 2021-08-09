@@ -8,6 +8,7 @@ import ca.applin.selmer.lang.ast.AstExpression;
 import ca.applin.selmer.lang.ast.AstFuncCall;
 import ca.applin.selmer.lang.ast.AstFunctionDeclaration;
 import ca.applin.selmer.lang.ast.AstIfStatement;
+import ca.applin.selmer.lang.ast.AstLambdaExpression;
 import ca.applin.selmer.lang.ast.AstNumLitteral;
 import ca.applin.selmer.lang.ast.AstReturnExpression;
 import ca.applin.selmer.lang.ast.AstStatement;
@@ -15,6 +16,7 @@ import ca.applin.selmer.lang.ast.AstStringLitteral;
 import ca.applin.selmer.lang.ast.AstStructMemberDeclaration;
 import ca.applin.selmer.lang.ast.AstTypeDeclaration;
 import ca.applin.selmer.lang.ast.AstUnop;
+import ca.applin.selmer.lang.ast.AstVariableAssignement;
 import ca.applin.selmer.lang.ast.AstVariableDeclaration;
 import ca.applin.selmer.lang.ast.AstVariableReference;
 import ca.applin.selmer.lang.ast.AstStructDeclaration;
@@ -70,6 +72,11 @@ public class AstBaseVisitor<T> implements AstVisitor<T> {
     }
 
     @Override
+    public T visit(AstLambdaExpression astLambdaExpression) {
+        return null;
+    }
+
+    @Override
     public T visit(AstNumLitteral astNumLitteral) {
         return null;
     }
@@ -106,6 +113,11 @@ public class AstBaseVisitor<T> implements AstVisitor<T> {
 
     @Override
     public T visit(AstUnop astUnop) {
+        return null;
+    }
+
+    @Override
+    public T visit(AstVariableAssignement astVariableAssignement) {
         return null;
     }
 

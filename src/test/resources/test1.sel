@@ -2,7 +2,7 @@ Maybe A :: Type = Just A | Nothing
 Either A B :: Type = Left A | Right B
 
 match :: (Maybe A, A -> B, () -> B) -> B =
-(justA, f, _) -> f(unwrap(ma))
+(just A, f, _) -> f(unwrap(ma))
 
 
 main :: App = cmd -> {

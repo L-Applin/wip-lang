@@ -1,13 +1,19 @@
 // todo
+//   [decl]           struct member assignement : 'myType.elem = 12'
+//   [decl]           Pattern matching for sum type, function declaration
+//   [stmt]           for statement : 'for range(0, 10) { x: Int = it }'
 //   [expr]           List access : list[0]
 //   [expr]           struct instanciation
+//   [expr]           struct member access 'myVar : Int = myStruct.elem'
 //   [expr]           array/list litteral
 //   [expr]           function call 'ID' should be replaced by an expression that must type resolve to a function trype
-//   [expr]           lambda expression
-//   [decl]           Pattern matching for sum type, function declaration
+//   [expr]           lambda expression :
+//   [lang]           type classes and implementation
+//   [lang]           heap vs stack ???
 //   [bug:type/fun]   Unit type '()' breaks empty function call 'myFunc()'
 
 // done
+//   [decl]                    Variable assignement : 'myVar = 12'
 //   [expr/decl]               function declaration
 //   [bug:2021-08-08]          code block should be properly seperated by line break or ';'
 //   [bug:type]                in sum types, a constructor with multiple poly args is parsed as a single poly arg instead of multiple constructor argument
@@ -208,9 +214,10 @@ varDecl returns [ AstVariableDeclaration ast ]
 //  EXPRESSIONS
 // *****************************
 expr returns [ AstExpression ast ]
-  : OPEN_PAREN ex=expr CLOSE_PAREN { $ast = $ex.ast; }
+  : OPEN_PAREN ex=expr CLOSE_PAREN
+    { $ast = $ex.ast; }
   | left=expr MOD right=expr
-     { $ast = new AstBinop($left.ast, $right.ast, Operator.MOD); }
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.MOD); }
   | left=expr op=(DIV | TIMES) right=expr
     { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
   | left=expr op=(MINUS | PLUS) right=expr
@@ -227,15 +234,21 @@ expr returns [ AstExpression ast ]
     { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.PRE); }
   | ex=expr unop
     { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.POST); }
-  | name=ID OPEN_PAREN CLOSE_PAREN  // empty function call
+  | funcCall
+    { $ast = $funcCall.ast; }
+  | id=ID
+    { $ast = new AstVariableReference($id.text); }
+  | litteral
+    { $ast = $litteral.ast; }
+  ;
+
+funcCall returns [ AstFuncCall ast ]
+  : name=ID OPEN_PAREN CLOSE_PAREN  // empty function call
     { $ast = new AstFuncCall($name.text, new ArrayList()); }
     // todo: name=ID should be replaced by an expression that could return a function type
   | name=ID OPEN_PAREN e+=expr (COMMA e+=expr)*  CLOSE_PAREN // function call
     { $ast = new AstFuncCall($name.text, $e.stream().map(expr -> expr.ast).toList()); }
-    // todo: name=ID should be replaced by an expression that could return a function type
-  | id=ID
-    { $ast = new AstVariableReference($id.text); }
-  | litteral { $ast = $litteral.ast; }
+    // todo: name=ID should be replaced by an expression that could return a function type ;
   ;
 
 unop
@@ -260,9 +273,10 @@ litteral returns [ AstExpression ast ]
 //  STATEMENTS
 // *****************************
 stmt returns [ AstStatement ast ]
-  : codeBlock      { $ast = $codeBlock.ast; }
-  | ifStatement    { $ast = $ifStatement.ast; }
-  | whileStatement { $ast = $whileStatement.ast; }
+  : codeBlock           { $ast = $codeBlock.ast; }
+  | ifStatement         { $ast = $ifStatement.ast; }
+  | whileStatement      { $ast = $whileStatement.ast; }
+  | variableAssignement { $ast = $variableAssignement.ast; }
   ;
 
 codeBlockContent returns [ Ast ast ]
@@ -270,6 +284,8 @@ codeBlockContent returns [ Ast ast ]
     { $ast = $s.ast; }
   | d=decl
     { $ast = $d.ast; }
+  | e=expr
+    { $ast = $e.ast; }
   | KEYWORD_RETURN e=expr
     { $ast = new AstReturnExpression($e.ast); }
   ;
@@ -282,12 +298,23 @@ codeBlock returns [ AstCodeBlock ast ]
   ;
 
 ifStatement returns [ AstIfStatement ast ]
-  : KEYWORD_IF e=expr ifBlock=codeBlock (KEYWORD_ELSE elseBlock=codeBlock)?
-    { $ast = new AstIfStatement($e.ast, $ifBlock.ast, $elseBlock.ast); }
+  // single line if
+  : KEYWORD_IF e=expr ifBlock=codeBlockContent
+    { List<Ast> code = new ArrayList();
+      code.add($ifBlock.ast);
+      $ast = new AstIfStatement($e.ast, new AstCodeBlock(code), AstCodeBlock.empty());
+    } #singleIf
+  | KEYWORD_IF e=expr ifBlock=codeBlock (KEYWORD_ELSE elseBlock=codeBlock)?
+    { $ast = new AstIfStatement($e.ast, $ifBlock.ast, $elseBlock.ast); } #multipleIf
   ;
 
 whileStatement returns [ AstWhileStatement ast ]
   : KEYWORD_WHILE e=expr codeBlock
     { $ast = new AstWhileStatement($e.ast, $codeBlock.ast); }
+  ;
+
+variableAssignement returns [ AstVariableAssignement ast ]
+  : id=ID EQ e=expr
+    { $ast = new AstVariableAssignement($id.text, $e.ast); }
   ;
 
