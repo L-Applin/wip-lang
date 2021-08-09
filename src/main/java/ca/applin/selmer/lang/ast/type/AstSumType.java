@@ -3,7 +3,7 @@ package ca.applin.selmer.lang.ast.type;
 import java.util.List;
 
 public class AstSumType extends AstType {
-    public static record SumTypeConstructor(String constructorName, AstType args) {
+    public static record SumTypeConstructor(String constructorName, List<AstType> args) {
         @Override
         public String toString() {
             return "cons:%s%s"

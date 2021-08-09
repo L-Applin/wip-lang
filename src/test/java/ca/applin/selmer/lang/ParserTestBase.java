@@ -24,5 +24,6 @@ public class ParserTestBase {
 
     protected Function<LangParser, Ast> langContext= langParser -> langParser.lang().ast;
     protected Function<LangParser, Ast> typeContext = langParser -> langParser.type().ast;
+    protected Function<LangParser, Ast> funcDeclContext = langParser -> langParser.funcDecl().ast;
 
 }

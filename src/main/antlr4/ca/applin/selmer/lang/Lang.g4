@@ -1,12 +1,13 @@
 // todo
 //   [expr]         struct instanciation
-//   [expr/decl]    function declaration
-//   [expr/decl]    function declaration
 //   [expr]         function call 'ID' should be replaced by an expression that must type resolve to a function trype
 //   [expr]         lambda expression
+//   [decl]         Pattern matching for sum type, function declaration
 
-// solved
+// done
+//   [expr/decl]               function declaration
 //   [bug:2021-08-08]          code block should be properly seperated by line break or ';'
+//   [bug:type]                im sum types, a constructor with multiple poly args is parsed as a single poly arg instead of multiple constructor argument
 
 grammar Lang ;
 import Base ;
@@ -23,7 +24,7 @@ import Base ;
 //  LANG
 // *****************************
 lang returns [ Ast ast ]
-  : code EOF { $ast = $code.ast; }
+  : (d+=decl)+ EOF { $ast = new AstCodeBlock($d.stream().map(tree-> tree.ast).toList()); }
   ;
 
 code returns [ Ast ast ]
@@ -51,16 +52,16 @@ type returns [ AstType ast ]
     { List<AstType> args = new ArrayList();
       args.add($a.ast);
       $ast = new AstTypeFunction(args, $r.ast); }
-  | sumType
-    { $ast = $sumType.ast; }
+  | simpleType
+    { $ast = new AstTypeSimple($simpleType.s); }
+  | genericType
+    { $ast = $genericType.ast; }
   | arrayType
     { $ast = $arrayType.ast; }
   | tupleType
     { $ast = new AstTypeTuple($tupleType.types); }
-  | genericType
-    { $ast = $genericType.ast; }
-  | simpleType
-    { $ast = new AstTypeSimple($simpleType.s); }
+  | <assoc=right> sumType
+    { $ast = $sumType.ast; }
   | '()'
     { $ast = AstType.UNIT; }
   ;
@@ -72,7 +73,7 @@ typeList returns [ List<AstType> types ]
   ;
 
 sumTypeElem returns [ AstSumType.SumTypeConstructor elem ]
-  : id=ID t=type? { $elem = new AstSumType.SumTypeConstructor($id.text, $ctx.t == null ? null : $t.ast); }
+  : id=ID t+=type* { $elem = new AstSumType.SumTypeConstructor($id.text, $t.stream().map(tp -> tp.ast).toList()); }
   ;
 
 sumType returns [ AstSumType ast ]
@@ -86,8 +87,7 @@ genericType returns [ AstTypePoly ast ]
   ;
 
 simpleType returns [ String s ]
-  : ID
-    { $s = $ID.text; }
+  : ID { $s = $ID.text; }
   ;
 
 tupleType returns [ List<AstType> types ]

@@ -28,7 +28,7 @@ class AstFunctionDeclarationTest extends ParserTestBase  {
             "isEven :: x -> x % 2 == 0"
     })
     void functionDeclarationParsingTest(String toParse) {
-        AstFunctionDeclaration ast = (AstFunctionDeclaration) getAstFor(toParse, langContext);
+        AstFunctionDeclaration ast = (AstFunctionDeclaration) getAstFor(toParse, funcDeclContext);
         assertEquals("isEven", ast.name);
         assertEquals(1, ast.args.size());
         AstFunctionArgs arg = ast.args.get(0);
@@ -65,7 +65,7 @@ class AstFunctionDeclarationTest extends ParserTestBase  {
             "areEven :: x -> x % 2 == 0"
     })
     public void multipleArgFunctions(String toParse) {
-        AstFunctionDeclaration ast = (AstFunctionDeclaration) getAstFor(toParse, langContext);
+        AstFunctionDeclaration ast = (AstFunctionDeclaration) getAstFor(toParse, funcDeclContext);
         assertEquals("areEven", ast.name);
         if (ast.type.isKnown()) {
             AstTypeFunction funType = (AstTypeFunction) ast.type;
@@ -92,6 +92,11 @@ class AstFunctionDeclarationTest extends ParserTestBase  {
             """
     })
     public void functionBodyMultipleCode(String toParse) {
-        AstFunctionDeclaration ast = (AstFunctionDeclaration) getAstFor(toParse, langContext);
+        AstFunctionDeclaration ast = (AstFunctionDeclaration) getAstFor(toParse, funcDeclContext);
+        assertEquals("myFunc", ast.name);
+        AstTypeFunction type = (AstTypeFunction) ast.type;
+        assertEquals(new AstTypeSimple("Bool"), type.args.get(0));
+        assertEquals(new AstTypeSimple("Int"), type.args.get(1));
+        assertEquals(new AstTypeSimple("String"), type.ret);
     }
 }

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import ca.applin.selmer.lang.ParserTestBase;
 import ca.applin.selmer.lang.ast.AstFunctionDeclaration;
+import ca.applin.selmer.lang.ast.type.AstSumType.SumTypeConstructor;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,6 +34,7 @@ class AstTypeFunctionTest extends ParserTestBase {
     @DisplayName("Multiple args function types")
     @ValueSource(strings = {
             "(Int, A) -> String",
+            "(Int, Double) -> String",
             "(Int, Double) -> String"
     })
     public void functiontypeMultiple(String toParse) {
@@ -41,4 +44,23 @@ class AstTypeFunctionTest extends ParserTestBase {
         assertEquals(new AstTypeSimple("Int"), ast.args.get(0));
         assertEquals(new AstTypeSimple("String"), ast.ret);
     }
+
+    @ParameterizedTest
+    @DisplayName("Sum types, ")
+    @ValueSource(strings = {
+            "First | Second",
+            "First A | Second",
+            "First A | Second B",
+            "First A | Second B | Third C | fourth D",
+            "First A | Second B C D"
+    })
+    public void sumTypesTest(String toParse) {
+        AstSumType ast = (AstSumType) getAstFor(toParse, typeContext);
+        List<SumTypeConstructor> cons = ast.constructors;
+        assertFalse(cons.isEmpty());
+        assertEquals("First", cons.get(0).constructorName());
+        assertEquals("Second", cons.get(1).constructorName());
+    }
+
+
 }
