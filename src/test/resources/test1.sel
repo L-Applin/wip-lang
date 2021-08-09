@@ -2,12 +2,13 @@ Maybe A :: Type = Just A | Nothing
 Either A B :: Type = Left A | Right B
 
 match :: (Maybe A, A -> B, () -> B) -> B =
-(Just A, f, _) -> f(unwrap(ma))
+(justA, f, _) -> f(unwrap(ma))
+
 
 main :: App = cmd -> {
   intOrStr  : Either Int Str = Left(10)
   intOrStr2 : Either Int Str = Right("other")
   just10: Maybe Int = Just(10)
   vide: Maybe String = Nothing()
-  return match(just10, identity, () -> 1)
+  return match(just10, identity, constant(1))
 }

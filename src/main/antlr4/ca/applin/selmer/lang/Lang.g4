@@ -1,8 +1,11 @@
 // todo
-//   [expr]         struct instanciation
-//   [expr]         function call 'ID' should be replaced by an expression that must type resolve to a function trype
-//   [expr]         lambda expression
-//   [decl]         Pattern matching for sum type, function declaration
+//   [expr]           List access : list[0]
+//   [expr]           struct instanciation
+//   [expr]           array/list litteral
+//   [expr]           function call 'ID' should be replaced by an expression that must type resolve to a function trype
+//   [expr]           lambda expression
+//   [decl]           Pattern matching for sum type, function declaration
+//   [bug:type/fun]   Unit type '()' breaks empty function call 'myFunc()'
 
 // done
 //   [expr/decl]               function declaration
@@ -16,8 +19,6 @@ import Base ;
     import ca.applin.selmer.lang.ast.type.*;
     import java.util.*;
 }
-
-
 
 
 // *****************************
@@ -62,7 +63,7 @@ type returns [ AstType ast ]
     { $ast = new AstTypeTuple($tupleType.types); }
   | <assoc=right> sumType
     { $ast = $sumType.ast; }
-  | '()'
+  | UNIT
     { $ast = AstType.UNIT; }
   ;
 
@@ -205,7 +206,7 @@ varDecl returns [ AstVariableDeclaration ast ]
 //  EXPRESSIONS
 // *****************************
 expr returns [ AstExpression ast ]
-  : '(' ex=expr ')' { $ast = $ex.ast; }
+  : OPEN_PAREN ex=expr CLOSE_PAREN { $ast = $ex.ast; }
   | left=expr MOD right=expr
      { $ast = new AstBinop($left.ast, $right.ast, Operator.MOD); }
   | left=expr op=(DIV | TIMES) right=expr
@@ -224,7 +225,10 @@ expr returns [ AstExpression ast ]
     { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.PRE); }
   | ex=expr unop
     { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.POST); }
-  | name=ID '(' (e+=expr (',' e+=expr)*)?  ')' // function call
+  | name=ID OPEN_PAREN CLOSE_PAREN  // empty function call
+    { $ast = new AstFuncCall($name.text, new ArrayList()); }
+    // todo: name=ID should be replaced by an expression that could return a function type
+  | name=ID OPEN_PAREN e+=expr (COMMA e+=expr)*  CLOSE_PAREN // function call
     { $ast = new AstFuncCall($name.text, $e.stream().map(expr -> expr.ast).toList()); }
     // todo: name=ID should be replaced by an expression that could return a function type
   | id=ID

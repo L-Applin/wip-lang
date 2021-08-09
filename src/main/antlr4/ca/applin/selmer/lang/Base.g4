@@ -14,6 +14,7 @@ KEYWORD_IF     : 'if' ;
 KEYWORD_ELSE   : 'else' ;
 KEYWORD_WHILE  : 'while' ;
 KEYWORD_RETURN : 'return' ;
+UNIT           : 'Unit' ;
 
 ID : IdentifierChars ;
 
@@ -44,6 +45,10 @@ COLON         : ':' ;
 GT            : '>' ;
 LT            : '<' ;
 MOD           : '%' ;
+OPEN_PAREN    : '(' ;
+CLOSE_PAREN   : ')' ;
+COMMA         : ',' ;
+
 
 WS       : (' ' | '\t') -> skip ;
 NEWLINE  : ('\r'? '\n' | '\n')+ -> skip ;
