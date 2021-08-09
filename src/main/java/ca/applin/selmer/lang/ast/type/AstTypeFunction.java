@@ -1,5 +1,6 @@
 package ca.applin.selmer.lang.ast.type;
 
+import ca.applin.selmer.lang.AstVisitor;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,4 +20,9 @@ public class AstTypeFunction extends AstType {
                 ret.toString()
         );
     }
+
+    public <T> T visit(AstVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
 }

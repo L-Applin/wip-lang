@@ -1,5 +1,6 @@
 package ca.applin.selmer.lang.ast;
 
+import ca.applin.selmer.lang.AstVisitor;
 import ca.applin.selmer.lang.ast.type.AstType;
 import java.util.List;
 
@@ -29,4 +30,9 @@ public class AstFunctionDeclaration extends AstDeclaration {
                 body.toString()
         );
     }
+
+    public <T> T visit(AstVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
 }

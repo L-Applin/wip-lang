@@ -1,5 +1,6 @@
 package ca.applin.selmer.lang.ast.type;
 
+import ca.applin.selmer.lang.AstVisitor;
 import java.util.Objects;
 
 public class AstTypeSimple extends AstType {
@@ -29,4 +30,9 @@ public class AstTypeSimple extends AstType {
     public int hashCode() {
         return Objects.hash(name);
     }
+
+    public <T> T visit(AstVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
 }

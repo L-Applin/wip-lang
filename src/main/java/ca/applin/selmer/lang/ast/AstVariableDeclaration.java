@@ -1,5 +1,6 @@
 package ca.applin.selmer.lang.ast;
 
+import ca.applin.selmer.lang.AstVisitor;
 import ca.applin.selmer.lang.ast.type.AstType;
 
 public class AstVariableDeclaration extends AstDeclaration {
@@ -22,4 +23,9 @@ public class AstVariableDeclaration extends AstDeclaration {
                 initExpr == null ? "_" : initExpr.toString()
         );
     }
+
+    public <T> T visit(AstVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
 }

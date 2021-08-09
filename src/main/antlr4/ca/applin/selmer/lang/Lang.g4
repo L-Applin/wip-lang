@@ -28,11 +28,11 @@ lang returns [ Ast ast ]
   : (d+=decl)+ EOF { $ast = new AstCodeBlock($d.stream().map(tree-> tree.ast).toList()); }
   ;
 
-code returns [ Ast ast ]
-  : decl { $ast = $decl.ast; }
-  | expr { $ast = $expr.ast; }
-  | stmt { $ast = $stmt.ast; }
-  ;
+//code returns [ Ast ast ]
+//  : decl { $ast = $decl.ast; }
+//  | expr { $ast = $expr.ast; }
+//  | stmt { $ast = $stmt.ast; }
+//  ;
 
 
 
@@ -151,7 +151,7 @@ funcBody returns [ AstFunctionDeclaration.AstFunctionBody ast ]
   // single expr no return
   | expr
     { $ast =  new AstFunctionDeclaration.AstFunctionBody(new ArrayList(){{ add($expr.ast); }}); }
-  // full code block, maybe return
+  // full code block, return
   | '{' c+=codeBlockContent (c+=codeBlockContent)* '}'
     { $ast = new AstFunctionDeclaration.AstFunctionBody($c.stream().map(code -> code.ast).toList()); }
   ;
@@ -175,7 +175,7 @@ funcDecl returns [ AstFunctionDeclaration ast ]
  ;
 
 structMemberList returns [ List<AstStructMemberDeclaration> list ]
-  : (sm+=structMember (/*('\n' | ';')*/ sm+=structMember)*)?
+  : (sm+=structMember (sm+=structMember)*)?
     { $list = $sm == null ? new ArrayList() : $sm.stream().map(ct -> ct.ast).toList(); }
   ;
 

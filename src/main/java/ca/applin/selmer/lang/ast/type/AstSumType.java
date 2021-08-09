@@ -1,5 +1,6 @@
 package ca.applin.selmer.lang.ast.type;
 
+import ca.applin.selmer.lang.AstVisitor;
 import java.util.List;
 
 public class AstSumType extends AstType {
@@ -21,4 +22,9 @@ public class AstSumType extends AstType {
     public String toString() {
         return "SumType:%s".formatted(constructors.toString());
     }
+
+    public <T> T visit(AstVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
 }

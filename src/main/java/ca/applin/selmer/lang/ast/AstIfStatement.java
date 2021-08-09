@@ -1,5 +1,7 @@
 package ca.applin.selmer.lang.ast;
 
+import ca.applin.selmer.lang.AstVisitor;
+
 public class AstIfStatement extends AstStatement {
     public AstExpression check;
     public AstCodeBlock thenBlock;
@@ -18,4 +20,9 @@ public class AstIfStatement extends AstStatement {
                 thenBlock.toString(),
                 elseBlock == null ? "_" : elseBlock.toString());
     }
+
+    public <T> T visit(AstVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
 }

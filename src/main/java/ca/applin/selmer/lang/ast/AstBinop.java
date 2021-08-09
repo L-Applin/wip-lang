@@ -1,5 +1,7 @@
 package ca.applin.selmer.lang.ast;
 
+import ca.applin.selmer.lang.AstVisitor;
+
 public class AstBinop extends AstExpression {
     public AstExpression left;
     public AstExpression right;
@@ -14,8 +16,16 @@ public class AstBinop extends AstExpression {
 
     @Override
     public String toString() {
-        return "(binop op=%s left=%s right=%s)".formatted(
-                operator + ":" +operator.str, left.toString(), right.toString()
+        return "(binop op=%s %sleft=%s right=%s)".formatted(
+                operator + ":" +operator.str,
+                type.isKnown() ? "type:" + type.toString() +" ": "",
+                left.toString(),
+                right.toString()
         );
     }
+
+    public <T> T visit(AstVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
 }

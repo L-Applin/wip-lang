@@ -1,6 +1,8 @@
 package ca.applin.selmer.lang.ast.type;
 
-class UnknownType extends AstType {
+import ca.applin.selmer.lang.AstVisitor;
+
+public class UnknownType extends AstType {
 
     public static AstType INSTANCE = new UnknownType();
 
@@ -13,4 +15,9 @@ class UnknownType extends AstType {
     public String toString() {
         return "<UNKNOWN/>";
     }
+
+    public <T> T visit(AstVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
 }

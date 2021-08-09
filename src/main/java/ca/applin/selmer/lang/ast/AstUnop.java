@@ -1,5 +1,7 @@
 package ca.applin.selmer.lang.ast;
 
+import ca.applin.selmer.lang.AstVisitor;
+
 public class AstUnop extends AstExpression {
 
     public enum UnopType {
@@ -23,4 +25,9 @@ public class AstUnop extends AstExpression {
                 unopType, operator, expr.toString()
         );
     }
+
+    public <T> T visit(AstVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
 }

@@ -1,5 +1,6 @@
 package ca.applin.selmer.lang.ast.type;
 
+import ca.applin.selmer.lang.AstVisitor;
 import ca.applin.selmer.lang.ast.Ast;
 
 public abstract class AstType extends Ast {
@@ -11,6 +12,10 @@ public abstract class AstType extends Ast {
         public String toString() {
             return "Unit";
         }
+        public <T> T visit(AstVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+
     };
 
     public static final AstType VOID = new AstType() {
@@ -18,9 +23,14 @@ public abstract class AstType extends Ast {
         public String toString() {
             return "VOID";
         }
+        public <T> T visit(AstVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+
     };
 
 
     public boolean isKnown() { return true; }
+
 }
 
