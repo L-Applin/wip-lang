@@ -9,9 +9,17 @@ public abstract class AstType extends Ast {
     public static final AstType UNIT = new AstType() {
         @Override
         public String toString() {
-            return "()";
+            return "Unit";
         }
     };
+
+    public static final AstType VOID = new AstType() {
+        @Override
+        public String toString() {
+            return "VOID";
+        }
+    };
+
 
     public boolean isKnown() { return true; }
 }

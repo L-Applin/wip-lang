@@ -18,8 +18,8 @@ class AstTypeFunctionTest extends ParserTestBase {
     @DisplayName("Single arg function types")
     @ValueSource(strings = {
             "Int -> Bool",
-            "() -> Int",
-            "Int -> ()",
+            "Unit -> Int",
+            "Int ->  Void",
             "[Int] -> (String, Double)",
             "A -> B -> [A] -> [B]",
             "A -> Bool -> [A] -> [A]"

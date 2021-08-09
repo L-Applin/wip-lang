@@ -1,13 +1,13 @@
 lexer grammar Base ;
 
 INT
-    : MINUS? [0-9]+ ;
+  : MINUS? [0-9]+ ;
 
 DOUBLE
-    : MINUS? INT '.' INT? ;
+  : MINUS? INT '.' INT? ;
 
 STRING_LITERAL
-    : '"' (~('"' | '\\' | '\r' | '\n') | '\\' ('"' | '\\'))* '"' ;
+  : '"' (~('"' | '\\' | '\r' | '\n') | '\\' ('"' | '\\'))* '"' ;
 
 KEYWORD_TYPE   : 'Type' ;
 KEYWORD_IF     : 'if' ;
@@ -15,6 +15,7 @@ KEYWORD_ELSE   : 'else' ;
 KEYWORD_WHILE  : 'while' ;
 KEYWORD_RETURN : 'return' ;
 UNIT           : 'Unit' ;
+VOID           : 'Void' ;
 
 ID : IdentifierChars ;
 
@@ -49,6 +50,7 @@ OPEN_PAREN    : '(' ;
 CLOSE_PAREN   : ')' ;
 COMMA         : ',' ;
 
+//UNIT : '()' ;
 
 WS       : (' ' | '\t') -> skip ;
 NEWLINE  : ('\r'? '\n' | '\n')+ -> skip ;

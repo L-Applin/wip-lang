@@ -10,7 +10,7 @@
 // done
 //   [expr/decl]               function declaration
 //   [bug:2021-08-08]          code block should be properly seperated by line break or ';'
-//   [bug:type]                im sum types, a constructor with multiple poly args is parsed as a single poly arg instead of multiple constructor argument
+//   [bug:type]                in sum types, a constructor with multiple poly args is parsed as a single poly arg instead of multiple constructor argument
 
 grammar Lang ;
 import Base ;
@@ -65,6 +65,8 @@ type returns [ AstType ast ]
     { $ast = $sumType.ast; }
   | UNIT
     { $ast = AstType.UNIT; }
+  | VOID
+    { $ast = AstType.VOID; }
   ;
 
 
