@@ -1,40 +1,17 @@
 package ca.applin.selmer.lang;
 
-import ca.applin.selmer.lang.ast.Ast;
-import ca.applin.selmer.lang.ast.AstBinop;
-import ca.applin.selmer.lang.ast.AstCodeBlock;
-import ca.applin.selmer.lang.ast.AstDeclaration;
-import ca.applin.selmer.lang.ast.AstExpression;
-import ca.applin.selmer.lang.ast.AstFuncCall;
-import ca.applin.selmer.lang.ast.AstFunctionDeclaration;
-import ca.applin.selmer.lang.ast.AstIfStatement;
-import ca.applin.selmer.lang.ast.AstLambdaExpression;
-import ca.applin.selmer.lang.ast.AstNumLitteral;
-import ca.applin.selmer.lang.ast.AstReturnExpression;
-import ca.applin.selmer.lang.ast.AstStatement;
-import ca.applin.selmer.lang.ast.AstStringLitteral;
-import ca.applin.selmer.lang.ast.AstStructMemberDeclaration;
-import ca.applin.selmer.lang.ast.AstUnop;
-import ca.applin.selmer.lang.ast.AstVariableAssignement;
-import ca.applin.selmer.lang.ast.AstVariableDeclaration;
-import ca.applin.selmer.lang.ast.AstVariableReference;
-import ca.applin.selmer.lang.ast.AstStructDeclaration;
-import ca.applin.selmer.lang.ast.AstWhileStatement;
-import ca.applin.selmer.lang.ast.type.AstSumType;
-import ca.applin.selmer.lang.ast.type.AstType;
-import ca.applin.selmer.lang.ast.type.AstTypeArray;
-import ca.applin.selmer.lang.ast.AstTypeDeclaration;
-import ca.applin.selmer.lang.ast.type.AstTypeFunction;
-import ca.applin.selmer.lang.ast.type.AstTypePoly;
-import ca.applin.selmer.lang.ast.type.AstTypeSimple;
-import ca.applin.selmer.lang.ast.type.AstTypeTuple;
+import ca.applin.selmer.lang.ast.*;
+import ca.applin.selmer.lang.ast.type.*;
 
 public interface AstVisitor<T> {
     T visit(Ast ast);
+    T visit(AstArrayAccessor astArrayAccessor);
+    T visit(AstArrayLitteral astArrayLitteral);
     T visit(AstBinop binop);
     T visit(AstCodeBlock codeBlock);
     T visit(AstDeclaration astDeclaration);
     T visit(AstExpression astExpression);
+    T visit(AstForStatement astForStatement);
     T visit(AstFuncCall astExpression);
     T visit(AstFunctionDeclaration astFunctionDeclaration);
     T visit(AstIfStatement astIfStatement);
@@ -43,9 +20,10 @@ public interface AstVisitor<T> {
     T visit(AstReturnExpression astReturnExpression);
     T visit(AstStatement astStatement);
     T visit(AstStringLitteral astStringLitteral);
-    T visit(AstStructDeclaration astStructDeclaration);
+    T visit(AstTypeStruct astTypeStruct);
     T visit(AstStructMemberDeclaration astStructMemberDeclaration);
     T visit(AstTypeDeclaration astTypeDeclaration);
+    T visit(AstStructMemberAssignement astStructMemberAssignement);
     T visit(AstUnop astUnop);
     T visit(AstVariableAssignement astVariableAssignement);
     T visit(AstVariableDeclaration astVariableDeclaration);

@@ -1,22 +1,26 @@
 // todo
-//   [decl]           struct member assignement : 'myType.elem = 12'
 //   [decl]           Pattern matching for sum type, function declaration
-//   [stmt]           for statement : 'for range(0, 10) { x: Int = it }'
-//   [expr]           List access : list[0]
+//   [expr]            Array/list type with fixed size : [Int, 32]
 //   [expr]           struct instanciation
-//   [expr]           struct member access 'myVar : Int = myStruct.elem'
-//   [expr]           array/list litteral
+//   [expr]           ternary expression: 'x = x > 0 ? x : -x'
 //   [expr]           function call 'ID' should be replaced by an expression that must type resolve to a function trype
-//   [expr]           lambda expression :
+//   [expr]           lambda expression : 'myFunc(x -> x + 1)'
 //   [lang]           type classes and implementation
+//   [lang]           type class hint 'Read A => read ::  String -> A' or 'Comparable A => Iterator A :: Type { ... }'
 //   [lang]           heap vs stack ???
+//   [type]           fixed size types: s8, u8, s16, u16, s24, u24, s32, u32, s64, u64, f32, f64
 //   [bug:type/fun]   Unit type '()' breaks empty function call 'myFunc()'
 
 // done
-//   [decl]                    Variable assignement : 'myVar = 12'
-//   [expr/decl]               function declaration
-//   [bug:2021-08-08]          code block should be properly seperated by line break or ';'
-//   [bug:type]                in sum types, a constructor with multiple poly args is parsed as a single poly arg instead of multiple constructor argument
+//   [expr]           List access : list[0]
+//   [expr]           array/list litteral
+//   [stmt]           for statement : 'for range(0, 10) { x: Int = it }'
+//   [expr]           struct member access 'myVar : Int = myStruct.elem'
+//   [decl]           Variable assignement : 'myVar = 12'
+//   [decl]           struct member assignement : 'myType.elem = 12'
+//   [expr/decl]      function declaration
+//   [bug:2021-08-08] code block should be properly seperated by line break or ';'
+//   [bug:type]       in sum types, a constructor with multiple poly args is parsed as a single poly arg instead of multiple constructor argument
 
 grammar Lang ;
 import Base ;
@@ -52,7 +56,7 @@ lang returns [ Ast ast ]
 //  TYPES
 // *****************************
 type returns [ AstType ast ]
-  : '(' t=type ')' { $ast = $t.ast; }
+  : OPEN_PAREN t=type CLOSE_PAREN { $ast = $t.ast; }
   | <assoc=right> typeList ARROW r=type
     { $ast = new AstTypeFunction($typeList.types, $r.ast); }
   | <assoc=right> a=type ARROW r=type
@@ -74,7 +78,6 @@ type returns [ AstType ast ]
   | VOID
     { $ast = AstType.VOID; }
   ;
-
 
 typeList returns [ List<AstType> types ]
   : '(' type (',' type)* ')'
@@ -133,11 +136,11 @@ typeDecl returns [ AstTypeDeclaration ast ]
     { $ast = new AstTypeDeclaration($sim.s, new ArrayList(), $t.ast); }
   ;
 
-structDecl returns [ AstStructDeclaration ast ]
+structDecl returns [ AstTypeStruct ast ]
   : gen=genericType DOUBLE_COLON KEYWORD_TYPE '{' sml=structMemberList '}'
-    { $ast = new AstStructDeclaration($gen.ast.name, $gen.ast.polyArg, $sml.list); }
+    { $ast = new AstTypeStruct($gen.ast.name, $gen.ast.polyArg, $sml.list); }
   | sim=simpleType DOUBLE_COLON KEYWORD_TYPE '{' sml=structMemberList '}'
-    { $ast = new AstStructDeclaration($sim.s, new ArrayList(), $sml.list); }
+    { $ast = new AstTypeStruct($sim.s, new ArrayList(), $sml.list); }
   ;
 
 funcArg returns [ AstFunctionDeclaration.AstFunctionArgs ast ]
@@ -152,13 +155,13 @@ funcArgList returns [ List<AstFunctionDeclaration.AstFunctionArgs> list ]
 
 funcBody returns [ AstFunctionDeclaration.AstFunctionBody ast ]
   // empty body
-  : '{' '}'
+  : OPEN_CURLY CLOSE_CURLY
     { $ast = new AstFunctionDeclaration.AstFunctionBody(new ArrayList()); }
   // single expr no return
   | expr
     { $ast =  new AstFunctionDeclaration.AstFunctionBody(new ArrayList(){{ add($expr.ast); }}); }
   // full code block, return
-  | '{' c+=codeBlockContent (c+=codeBlockContent)* '}'
+  | OPEN_CURLY c+=codeBlockContent (c+=codeBlockContent)* CLOSE_CURLY
     { $ast = new AstFunctionDeclaration.AstFunctionBody($c.stream().map(code -> code.ast).toList()); }
   ;
 
@@ -216,6 +219,8 @@ varDecl returns [ AstVariableDeclaration ast ]
 expr returns [ AstExpression ast ]
   : OPEN_PAREN ex=expr CLOSE_PAREN
     { $ast = $ex.ast; }
+  | left=expr DOT right=expr
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.DOT); }
   | left=expr MOD right=expr
     { $ast = new AstBinop($left.ast, $right.ast, Operator.MOD); }
   | left=expr op=(DIV | TIMES) right=expr
@@ -228,12 +233,19 @@ expr returns [ AstExpression ast ]
     { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
   | left=expr op=(GT | LT | GT_EQ | LT_EQ) right=expr
     { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
-  | left=expr DOUBLE_EQ right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.DOUBLE_EQ); }
+  | left=expr op=(DOUBLE_EQ | NEQ) right=expr
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
   | unop ex=expr
     { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.PRE); }
   | ex=expr unop
     { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.POST); }
+  | OPEN_PAREN tupleExprs+=expr (COMMA tupleExprs+=expr)* CLOSE_PAREN
+  | OPEN_SQUARE CLOSE_SQUARE
+    { $ast = new AstArrayLitteral(); }
+  | OPEN_SQUARE exprs+=expr (COMMA exprs+=expr)* CLOSE_SQUARE
+    { $ast = new AstArrayLitteral($exprs.stream().map(expr -> expr.ast).toList()); }
+  | e=expr OPEN_SQUARE t=expr CLOSE_SQUARE
+    { $ast = new AstArrayAccessor($e.ast, $t.ast); }
   | funcCall
     { $ast = $funcCall.ast; }
   | id=ID
@@ -273,10 +285,12 @@ litteral returns [ AstExpression ast ]
 //  STATEMENTS
 // *****************************
 stmt returns [ AstStatement ast ]
-  : codeBlock           { $ast = $codeBlock.ast; }
-  | ifStatement         { $ast = $ifStatement.ast; }
-  | whileStatement      { $ast = $whileStatement.ast; }
-  | variableAssignement { $ast = $variableAssignement.ast; }
+  : codeBlock               { $ast = $codeBlock.ast; }
+  | ifStatement             { $ast = $ifStatement.ast; }
+  | whileStatement          { $ast = $whileStatement.ast; }
+  | forStatement            { $ast = $forStatement.ast; }
+  | structMemberAssignement { $ast = $structMemberAssignement.ast; }
+  | variableAssignement     { $ast = $variableAssignement.ast; }
   ;
 
 codeBlockContent returns [ Ast ast ]
@@ -284,16 +298,16 @@ codeBlockContent returns [ Ast ast ]
     { $ast = $s.ast; }
   | d=decl
     { $ast = $d.ast; }
-  | e=expr
-    { $ast = $e.ast; }
   | KEYWORD_RETURN e=expr
     { $ast = new AstReturnExpression($e.ast); }
+  | e=expr
+    { $ast = $e.ast; }
   ;
 
 codeBlock returns [ AstCodeBlock ast ]
-  : '{' '}'
-    { $ast = new AstCodeBlock(new ArrayList()); }
-  | '{' c+=codeBlockContent (c+=codeBlockContent)* '}'
+  : OPEN_CURLY CLOSE_CURLY
+    { $ast = AstCodeBlock.empty(); }
+  | OPEN_CURLY c+=codeBlockContent (c+=codeBlockContent)* CLOSE_CURLY
     { $ast = new AstCodeBlock($c.stream().map(q -> q.ast).toList()); }
   ;
 
@@ -311,6 +325,16 @@ ifStatement returns [ AstIfStatement ast ]
 whileStatement returns [ AstWhileStatement ast ]
   : KEYWORD_WHILE e=expr codeBlock
     { $ast = new AstWhileStatement($e.ast, $codeBlock.ast); }
+  ;
+
+forStatement returns [ AstForStatement ast ]
+  : KEYWORD_FOR iter=expr cb=codeBlock
+    { $ast = new AstForStatement($iter.ast, $cb.ast); }
+  ;
+
+structMemberAssignement returns [ AstStructMemberAssignement ast ]
+  : str+=ID (DOT str+=ID)+ EQ e=expr // multiple deref
+    { $ast = new AstStructMemberAssignement($str.stream().map(s -> s.getText()).toList(), $e.ast); }
   ;
 
 variableAssignement returns [ AstVariableAssignement ast ]

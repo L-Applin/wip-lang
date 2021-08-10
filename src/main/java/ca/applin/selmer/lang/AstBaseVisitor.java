@@ -1,10 +1,13 @@
 package ca.applin.selmer.lang;
 
 import ca.applin.selmer.lang.ast.Ast;
+import ca.applin.selmer.lang.ast.AstArrayAccessor;
+import ca.applin.selmer.lang.ast.AstArrayLitteral;
 import ca.applin.selmer.lang.ast.AstBinop;
 import ca.applin.selmer.lang.ast.AstCodeBlock;
 import ca.applin.selmer.lang.ast.AstDeclaration;
 import ca.applin.selmer.lang.ast.AstExpression;
+import ca.applin.selmer.lang.ast.AstForStatement;
 import ca.applin.selmer.lang.ast.AstFuncCall;
 import ca.applin.selmer.lang.ast.AstFunctionDeclaration;
 import ca.applin.selmer.lang.ast.AstIfStatement;
@@ -13,13 +16,14 @@ import ca.applin.selmer.lang.ast.AstNumLitteral;
 import ca.applin.selmer.lang.ast.AstReturnExpression;
 import ca.applin.selmer.lang.ast.AstStatement;
 import ca.applin.selmer.lang.ast.AstStringLitteral;
+import ca.applin.selmer.lang.ast.AstStructMemberAssignement;
 import ca.applin.selmer.lang.ast.AstStructMemberDeclaration;
 import ca.applin.selmer.lang.ast.AstTypeDeclaration;
 import ca.applin.selmer.lang.ast.AstUnop;
 import ca.applin.selmer.lang.ast.AstVariableAssignement;
 import ca.applin.selmer.lang.ast.AstVariableDeclaration;
 import ca.applin.selmer.lang.ast.AstVariableReference;
-import ca.applin.selmer.lang.ast.AstStructDeclaration;
+import ca.applin.selmer.lang.ast.type.AstTypeStruct;
 import ca.applin.selmer.lang.ast.AstWhileStatement;
 import ca.applin.selmer.lang.ast.type.AstSumType;
 import ca.applin.selmer.lang.ast.type.AstType;
@@ -33,6 +37,16 @@ public class AstBaseVisitor<T> implements AstVisitor<T> {
 
     @Override
     public T visit(Ast ast) {
+        return null;
+    }
+
+    @Override
+    public T visit(AstArrayAccessor astArrayAccessor) {
+        return null;
+    }
+
+    @Override
+    public T visit(AstArrayLitteral astArrayLitteral) {
         return null;
     }
 
@@ -53,6 +67,11 @@ public class AstBaseVisitor<T> implements AstVisitor<T> {
 
     @Override
     public T visit(AstExpression astExpression) {
+        return null;
+    }
+
+    @Override
+    public T visit(AstForStatement astForStatement) {
         return null;
     }
 
@@ -97,12 +116,17 @@ public class AstBaseVisitor<T> implements AstVisitor<T> {
     }
 
     @Override
-    public T visit(AstStructDeclaration astStructDeclaration) {
+    public T visit(AstTypeStruct astTypeStruct) {
         return null;
     }
 
     @Override
     public T visit(AstStructMemberDeclaration astStructMemberDeclaration) {
+        return null;
+    }
+
+    @Override
+    public T visit(AstStructMemberAssignement astStructMemberAssignement) {
         return null;
     }
 

@@ -25,7 +25,8 @@ public enum Operator {
     DIV             ("/"),
     BIT_OR          ("|"),
     BIT_AND         ("&"),
-    MOD             ("%")
+    MOD             ("%"),
+    DOT             (".")
     ;
 
     static Map<String, Operator> opMap = Stream.of(Operator.values()).collect(Collectors.toMap(

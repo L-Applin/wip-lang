@@ -1,20 +1,21 @@
-package ca.applin.selmer.lang.ast;
+package ca.applin.selmer.lang.ast.type;
 
 import ca.applin.selmer.lang.AstVisitor;
 import ca.applin.selmer.lang.ast.AstStructMemberDeclaration;
 import ca.applin.selmer.lang.ast.type.AstType;
 import java.util.List;
 
-public class AstStructDeclaration extends AstType {
+public class AstTypeStruct extends AstType {
     public String name;
     public List<String> polyArg;
     public List<AstStructMemberDeclaration> members;
 
-    public AstStructDeclaration(String name, List<String> polyArg,
+    public AstTypeStruct(String name, List<String> polyArg,
             List<AstStructMemberDeclaration> members) {
         this.name = name;
         this.polyArg = polyArg;
         this.members = members;
+        this.isStructType = true;
     }
 
     @Override

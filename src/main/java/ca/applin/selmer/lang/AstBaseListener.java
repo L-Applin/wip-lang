@@ -12,7 +12,7 @@ import ca.applin.selmer.lang.ast.AstNumLitteral;
 import ca.applin.selmer.lang.ast.AstReturnExpression;
 import ca.applin.selmer.lang.ast.AstStatement;
 import ca.applin.selmer.lang.ast.AstStringLitteral;
-import ca.applin.selmer.lang.ast.AstStructDeclaration;
+import ca.applin.selmer.lang.ast.type.AstTypeStruct;
 import ca.applin.selmer.lang.ast.AstStructMemberDeclaration;
 import ca.applin.selmer.lang.ast.AstTypeDeclaration;
 import ca.applin.selmer.lang.ast.AstUnop;
@@ -89,7 +89,7 @@ public class AstBaseListener implements AstListener {
     }
 
     @Override
-    public void visit(AstStructDeclaration astStructDeclaration) {
+    public void visit(AstTypeStruct astTypeStruct) {
 
     }
 

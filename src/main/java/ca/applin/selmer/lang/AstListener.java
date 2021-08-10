@@ -12,7 +12,7 @@ import ca.applin.selmer.lang.ast.AstNumLitteral;
 import ca.applin.selmer.lang.ast.AstReturnExpression;
 import ca.applin.selmer.lang.ast.AstStatement;
 import ca.applin.selmer.lang.ast.AstStringLitteral;
-import ca.applin.selmer.lang.ast.AstStructDeclaration;
+import ca.applin.selmer.lang.ast.type.AstTypeStruct;
 import ca.applin.selmer.lang.ast.AstStructMemberDeclaration;
 import ca.applin.selmer.lang.ast.AstTypeDeclaration;
 import ca.applin.selmer.lang.ast.AstUnop;
@@ -39,7 +39,7 @@ public interface AstListener {
     void visit(AstReturnExpression astReturnExpression);
     void visit(AstStatement astStatement);
     void visit(AstStringLitteral astStringLitteral);
-    void visit(AstStructDeclaration astStructDeclaration);
+    void visit(AstTypeStruct astTypeStruct);
     void visit(AstStructMemberDeclaration astStructMemberDeclaration);
     void visit(AstTypeDeclaration astTypeDeclaration);
     void visit(AstUnop astUnop);

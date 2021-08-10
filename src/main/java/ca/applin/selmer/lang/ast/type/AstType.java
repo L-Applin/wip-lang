@@ -29,6 +29,7 @@ public abstract class AstType extends Ast {
 
     };
 
+    public boolean isStructType;
 
     public boolean isKnown() { return true; }
 
