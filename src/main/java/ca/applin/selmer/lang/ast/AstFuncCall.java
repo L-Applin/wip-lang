@@ -3,16 +3,13 @@ package ca.applin.selmer.lang.ast;
 import ca.applin.selmer.lang.AstVisitor;
 import ca.applin.selmer.lang.ast.type.AstType;
 import java.util.List;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 public class AstFuncCall extends AstExpression {
-    public String functionName;
+    public AstExpression base;
     public List<AstExpression> args;
 
-    public AstFuncCall(String functionName,
-            List<AstExpression> args) {
-        this.functionName = functionName;
+    public AstFuncCall(AstExpression base, List<AstExpression> args) {
+        this.base = base;
         this.args = args;
         this.type = AstType.UNKNOWN;
     }
@@ -20,7 +17,7 @@ public class AstFuncCall extends AstExpression {
     @Override
     public String toString() {
         return "(FunctionCall '%s' args=%s)".formatted(
-                functionName,
+                base,
                 args.stream().map(AstExpression::toString).toList()
         );
     }

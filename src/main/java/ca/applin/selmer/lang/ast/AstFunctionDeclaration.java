@@ -6,15 +6,14 @@ import java.util.List;
 
 public class AstFunctionDeclaration extends AstDeclaration {
     public static record AstFunctionArgs(String name, AstType type) {}
-    public static record AstFunctionBody(List<Ast> code) {}
     public String name;
     public AstType type;
     public List<AstFunctionArgs> args;
-    public AstFunctionBody body;
+    public AstCodeBlock body;
 
     public AstFunctionDeclaration(String name, AstType type,
             List<AstFunctionArgs> args,
-            AstFunctionBody body) {
+            AstCodeBlock body) {
         this.name = name;
         this.type = type;
         this.args = args;

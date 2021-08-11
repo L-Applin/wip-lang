@@ -4,12 +4,17 @@ import ca.applin.selmer.lang.AstVisitor;
 
 public class AstVariableAssignement extends AstStatement {
 
-    private String varName;
-    private AstExpression expr;
+    public String varName;
+    public AstExpression expr;
 
     public AstVariableAssignement(String varName, AstExpression expr) {
         this.varName = varName;
         this.expr = expr;
+    }
+
+    @Override
+    public String toString() {
+        return "VarAssign:[name=%s expr=%s]".formatted(varName, expr.toString());
     }
 
     @Override

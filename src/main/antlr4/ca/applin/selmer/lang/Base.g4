@@ -62,4 +62,4 @@ DOT           : '.' ;
 WS       : (' ' | '\t') -> skip ;
 NEWLINE  : ('\r'? '\n' | '\n')+ -> skip ;
 SEP      : ';' -> skip ;
-COMMENT  : '//' (.)*? NEWLINE ;
+COMMENT  : '//' (.)*? NEWLINE -> skip;

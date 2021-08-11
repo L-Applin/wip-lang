@@ -17,7 +17,7 @@ public class AstVariableDeclaration extends AstDeclaration {
 
     @Override
     public String toString() {
-        return "VarDecl:%s type=%s init=%s".formatted(
+        return "VarDecl:[name=%s type=%s init=%s]".formatted(
                 varName,
                 type.toString(),
                 initExpr == null ? "_" : initExpr.toString()

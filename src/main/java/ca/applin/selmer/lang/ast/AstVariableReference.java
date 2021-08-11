@@ -14,7 +14,7 @@ public class AstVariableReference extends AstExpression {
 
     @Override
     public String toString() {
-        return "(VariableRef %s".formatted(varName);
+        return "VariableRef:[%s type=%s]".formatted(varName, type);
     }
 
     public <T> T visit(AstVisitor<T> visitor) {

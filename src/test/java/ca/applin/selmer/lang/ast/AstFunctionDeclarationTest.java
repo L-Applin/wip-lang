@@ -2,9 +2,9 @@ package ca.applin.selmer.lang.ast;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import ca.applin.selmer.lang.LangParser.CodeBlockContentContext;
 import ca.applin.selmer.lang.ParserTestBase;
 import ca.applin.selmer.lang.ast.AstFunctionDeclaration.AstFunctionArgs;
-import ca.applin.selmer.lang.ast.AstFunctionDeclaration.AstFunctionBody;
 import ca.applin.selmer.lang.ast.type.AstType;
 import ca.applin.selmer.lang.ast.type.AstTypeFunction;
 import ca.applin.selmer.lang.ast.type.AstTypeSimple;
@@ -48,9 +48,9 @@ class AstFunctionDeclarationTest extends ParserTestBase  {
             assertEquals(AstType.UNKNOWN, ast.type);
         }
 
-        AstFunctionBody body = ast.body;
-        assertEquals(1, body.code().size());
-        AstExpression expr = (AstExpression) body.code().get(0);
+        AstCodeBlock body = ast.body;
+        assertEquals(1, body.code.size());
+        AstExpression expr = (AstExpression) body.code.get(0);
         assertNotNull(expr);
     }
 

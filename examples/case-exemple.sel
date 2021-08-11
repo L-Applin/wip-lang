@@ -1,0 +1,4 @@
+map :: (A -> B) -> [A] -> [B] =
+  case (f, []) -> []
+  case (f, [a]) ->
+  case (f, [head:tail]) -> f(head) ++ map(f, tail)

@@ -1,17 +1,21 @@
 // todo
-//   [decl]           Pattern matching for sum type, function declaration
-//   [expr]            Array/list type with fixed size : [Int, 32]
-//   [expr]           struct instanciation
+//   [bug:type/fun]   Unit type '()' breaks empty function call 'myFunc()'
+//   [decl]           const wit '::' : 'myConst :: 12' 'myConst :: Int = 12'
 //   [expr]           ternary expression: 'x = x > 0 ? x : -x'
-//   [expr]           function call 'ID' should be replaced by an expression that must type resolve to a function trype
-//   [expr]           lambda expression : 'myFunc(x -> x + 1)'
+//   [expr]           struct instanciation
+//   [type]           fixed size types: s8, u8, s16, u16, s24, u24, s32, u32, s64, u64, f32, f64
 //   [lang]           type classes and implementation
 //   [lang]           type class hint 'Read A => read ::  String -> A' or 'Comparable A => Iterator A :: Type { ... }'
 //   [lang]           heap vs stack ???
-//   [type]           fixed size types: s8, u8, s16, u16, s24, u24, s32, u32, s64, u64, f32, f64
-//   [bug:type/fun]   Unit type '()' breaks empty function call 'myFunc()'
+//   [lang]           custom operators : ' `|->` :: (Int, Int) -> Int = (a, b) -> a + b '
+//   [lang]           multiline comments
+//   [expr]           Array/list type with fixed size : [Int, 32]
+//   [decl]           Pattern matching for sum type, function declaration
+//   [lang]           imports, dependency, libraries...
 
 // done
+//   [expr]           lambda expression : 'myFunc(x -> x + 1)'
+//   [expr]           function call 'ID' should be replaced by an expression that must type resolve to a function trype
 //   [expr]           List access : list[0]
 //   [expr]           array/list litteral
 //   [stmt]           for statement : 'for range(0, 10) { x: Int = it }'
@@ -153,16 +157,16 @@ funcArgList returns [ List<AstFunctionDeclaration.AstFunctionArgs> list ]
     { $list = $fa.stream().map(c -> c.ast).toList(); }
   ;
 
-funcBody returns [ AstFunctionDeclaration.AstFunctionBody ast ]
+funcBody returns [ AstCodeBlock ast ]
   // empty body
   : OPEN_CURLY CLOSE_CURLY
-    { $ast = new AstFunctionDeclaration.AstFunctionBody(new ArrayList()); }
+    { $ast = new AstCodeBlock(new ArrayList()); }
   // single expr no return
   | expr
-    { $ast =  new AstFunctionDeclaration.AstFunctionBody(new ArrayList(){{ add($expr.ast); }}); }
+    { $ast =  new AstCodeBlock(new ArrayList(){{ add($expr.ast); }}); }
   // full code block, return
   | OPEN_CURLY c+=codeBlockContent (c+=codeBlockContent)* CLOSE_CURLY
-    { $ast = new AstFunctionDeclaration.AstFunctionBody($c.stream().map(code -> code.ast).toList()); }
+    { $ast = new AstCodeBlock($c.stream().map(code -> code.ast).toList()); }
   ;
 
 funcDecl returns [ AstFunctionDeclaration ast ]
@@ -177,8 +181,8 @@ funcDecl returns [ AstFunctionDeclaration ast ]
   | name=ID DOUBLE_COLON (t=type EQ)? '(' fa=funcArgList? ')' ARROW body=funcBody
     { $ast = new AstFunctionDeclaration(
               $name.text,
-              _localctx.t == null ? AstType.UNKNOWN : $t.ast,
-              $fa.list,
+              _localctx.t  == null ? AstType.UNKNOWN : $t.ast,
+              _localctx.fa == null ? new ArrayList() : $fa.list,
               $body.ast);
     }
  ;
@@ -239,6 +243,8 @@ expr returns [ AstExpression ast ]
     { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.PRE); }
   | ex=expr unop
     { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.POST); }
+  | lambdaExpression
+    { $ast = $lambdaExpression.ast; }
   | OPEN_PAREN tupleExprs+=expr (COMMA tupleExprs+=expr)* CLOSE_PAREN
   | OPEN_SQUARE CLOSE_SQUARE
     { $ast = new AstArrayLitteral(); }
@@ -246,21 +252,14 @@ expr returns [ AstExpression ast ]
     { $ast = new AstArrayLitteral($exprs.stream().map(expr -> expr.ast).toList()); }
   | e=expr OPEN_SQUARE t=expr CLOSE_SQUARE
     { $ast = new AstArrayAccessor($e.ast, $t.ast); }
-  | funcCall
-    { $ast = $funcCall.ast; }
+  | name=expr OPEN_PAREN CLOSE_PAREN  // empty function call
+    { $ast = new AstFuncCall($name.ast, new ArrayList()); }
+  | name=expr OPEN_PAREN args+=expr (COMMA args+=expr)*  CLOSE_PAREN // function call
+    { $ast = new AstFuncCall($name.ast, $args.stream().map(expr -> expr.ast).toList()); }
   | id=ID
     { $ast = new AstVariableReference($id.text); }
   | litteral
     { $ast = $litteral.ast; }
-  ;
-
-funcCall returns [ AstFuncCall ast ]
-  : name=ID OPEN_PAREN CLOSE_PAREN  // empty function call
-    { $ast = new AstFuncCall($name.text, new ArrayList()); }
-    // todo: name=ID should be replaced by an expression that could return a function type
-  | name=ID OPEN_PAREN e+=expr (COMMA e+=expr)*  CLOSE_PAREN // function call
-    { $ast = new AstFuncCall($name.text, $e.stream().map(expr -> expr.ast).toList()); }
-    // todo: name=ID should be replaced by an expression that could return a function type ;
   ;
 
 unop
@@ -273,8 +272,35 @@ litteral returns [ AstExpression ast ]
   | s=STRING_LITERAL { $ast = new AstStringLitteral($s.text); }
   ;
 
+lambdaArg returns [ AstLambdaExpression.AstLambdaArgs ast ]
+  : name=ID (COLON t=type)?
+    { $ast = new AstLambdaExpression.AstLambdaArgs($name.text, _localctx.t == null ? AstType.UNKNOWN : $t.ast); }
+  ;
 
+lambdaArgList returns [ List<AstLambdaExpression.AstLambdaArgs> list ]
+  : fa+=lambdaArg (',' fa+=lambdaArg)*
+    { $list = $fa.stream().map(c -> c.ast).toList(); }
+  ;
 
+lambdaBody returns [ AstCodeBlock ast ]
+  // empty body
+  : OPEN_CURLY CLOSE_CURLY
+    { $ast = new AstCodeBlock(new ArrayList()); }
+  // single expr no return
+  | expr
+    { $ast = new AstCodeBlock(new ArrayList(){{ add($expr.ast); }}); }
+  // full code block, return
+  | OPEN_CURLY c+=codeBlockContent (c+=codeBlockContent)* CLOSE_CURLY
+    { $ast = new AstCodeBlock($c.stream().map(code -> code.ast).toList()); }
+  ;
+
+lambdaExpression returns [ AstLambdaExpression ast ]
+  // single argument no parentheses around
+  : arg=lambdaArg ARROW body=lambdaBody
+    { $ast = new AstLambdaExpression(new ArrayList() {{ add($arg.ast); }}, $body.ast); }
+  | '(' fa=lambdaArgList? ')' ARROW body=lambdaBody
+    { $ast = new AstLambdaExpression($fa.list, $body.ast); }
+ ;
 
 
 

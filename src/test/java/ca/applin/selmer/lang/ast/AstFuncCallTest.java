@@ -22,7 +22,7 @@ class AstFuncCallTest extends ParserTestBase {
         Pair<String, String> split = extract(str);
         String toParse = split.first();
         AstFuncCall ast = (AstFuncCall) getAstFor(toParse, exprContext);
-        assertEquals(split.second(), ast.functionName);
+        assertEquals(split.second(), ((AstVariableReference)ast.base).varName);
     }
 
     @ParameterizedTest
@@ -36,7 +36,7 @@ class AstFuncCallTest extends ParserTestBase {
         Pair<String, String> split = extract(str);
         String toParse = split.first();
         AstFuncCall ast = (AstFuncCall) getAstFor(toParse, exprContext);
-        assertEquals(split.second(), ast.functionName);
+        assertEquals(split.second(), ((AstVariableReference)ast.base).varName);
         assertEquals(1, ast.args.size());
     }
 
@@ -51,7 +51,7 @@ class AstFuncCallTest extends ParserTestBase {
         Pair<String, String> split = extract(str);
         String toParse = split.first();
         AstFuncCall ast = (AstFuncCall) getAstFor(toParse, exprContext);
-        assertEquals(split.second(), ast.functionName);
+        assertEquals(split.second(), ((AstVariableReference)ast.base).varName);
         assertTrue(ast.args.size() > 1);
     }
 

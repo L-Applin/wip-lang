@@ -19,9 +19,6 @@ public class AstTypeSimple extends AstType {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
         AstTypeSimple that = (AstTypeSimple) o;
         return Objects.equals(name, that.name);
     }
