@@ -1,24 +1,11 @@
 package ca.applin.selmer.lang.typer;
 
-public class MismatchTypeException extends RuntimeException{
+import ca.applin.selmer.lang.ast.Ast;
+import java.net.Proxy.Type;
 
-    public MismatchTypeException() {
-    }
+public class MismatchTypeException extends TypeException {
 
-    public MismatchTypeException(String message) {
-        super(message);
-    }
-
-    public MismatchTypeException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public MismatchTypeException(Throwable cause) {
-        super(cause);
-    }
-
-    public MismatchTypeException(String message, Throwable cause, boolean enableSuppression,
-            boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
+    public MismatchTypeException(String message, Ast errorNode) {
+        super(message, errorNode);
     }
 }

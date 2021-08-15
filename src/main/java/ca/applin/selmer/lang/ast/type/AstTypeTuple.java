@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 public class AstTypeTuple extends AstType {
 
-    List<AstType> types;
+    public List<AstType> types;
 
     public AstTypeTuple(List<AstType> types) {
         this.types = types;

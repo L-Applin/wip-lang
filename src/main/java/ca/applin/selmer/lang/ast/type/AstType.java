@@ -3,7 +3,7 @@ package ca.applin.selmer.lang.ast.type;
 import ca.applin.selmer.lang.AstVisitor;
 import ca.applin.selmer.lang.ast.Ast;
 
-public abstract class AstType implements Ast {
+public abstract class AstType extends Ast {
 
     public static final AstType UNKNOWN = UnknownType.INSTANCE;
 
@@ -39,6 +39,7 @@ public abstract class AstType implements Ast {
 
     public boolean isKnown = true;
     public boolean isStructType;
+    public boolean isFuncType;
 
     public boolean isKnown() {
         return isKnown;

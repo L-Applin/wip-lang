@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import ca.applin.selmer.lang.LangParser.LangContext;
 import ca.applin.selmer.lang.ast.Ast;
+import ca.applin.selmer.lang.ast.AstCodeBlock;
+import ca.applin.selmer.lang.ast.AstDeclaration;
 import ca.applin.selmer.lang.ast.AstExpression;
+import ca.applin.selmer.lang.ast.AstFunctionDeclaration;
 import ca.applin.selmer.lang.ast.AstStatement;
 import ca.applin.selmer.lang.ast.type.AstType;
 import java.util.List;
@@ -21,7 +24,6 @@ public class ParserTestBase {
         CommonTokenStream inputStream = new CommonTokenStream(lexer);
         LangParser parser = new LangParser(inputStream);
         T ast = astTypeExtractor.apply(parser);
-        assertNotNull(ast);
         System.out.println(toParse);
         System.out.println(ast);
         return ast;
@@ -39,8 +41,9 @@ public class ParserTestBase {
     protected Function<LangParser, AstType> typeContext = langParser -> langParser.type().ast;
     protected Function<LangParser, AstExpression> exprContext = langParser -> langParser.expr().ast;
     protected Function<LangParser, AstStatement> stmtContext = langParser -> langParser.stmt().ast;
-    protected Function<LangParser, Ast> funcDeclContext = langParser -> langParser.funcDecl().ast;
-    protected Function<LangParser, Ast> codeBlockContext = langParser -> langParser.codeBlock().ast;
+    protected Function<LangParser, Ast> declContext = langParser -> langParser.decl().ast;
+    protected Function<LangParser, AstFunctionDeclaration> funcDeclContext = langParser -> langParser.funcDecl().ast;
+    protected Function<LangParser, AstCodeBlock> codeBlockContext = langParser -> langParser.codeBlock().ast;
 
 
 }

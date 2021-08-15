@@ -11,6 +11,7 @@
 //   [lang]           multiline comments
 //   [expr]           Array/list type with fixed size : [Int, 32]
 //   [decl]           Pattern matching for sum type, function declaration
+//   [lang]           range litterals : '[0..10]' is the same as '[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]'
 //   [lang]           imports, dependency, libraries...
 
 // done
@@ -125,7 +126,7 @@ arrayType returns [ AstType ast ]
 // *****************************
 //  DECLARATIONS
 // *****************************
-decl returns [ Ast ast ]
+decl returns [ AstDeclaration ast ]
   : typeDecl        { $ast = $typeDecl.ast; }
   | structDecl      { $ast = $structDecl.ast; }
   | funcDecl        { $ast = $funcDecl.ast; }
@@ -297,7 +298,9 @@ lambdaBody returns [ AstCodeBlock ast ]
 lambdaExpression returns [ AstLambdaExpression ast ]
   // single argument no parentheses around
   : arg=lambdaArg ARROW body=lambdaBody
-    { $ast = new AstLambdaExpression(new ArrayList() {{ add($arg.ast); }}, $body.ast); }
+    { $ast = new AstLambdaExpression(new ArrayList() {{ add($arg.ast); }}, $body.ast);
+      $ast.setTokens($ctx.start, $ctx.stop);
+    }
   | '(' fa=lambdaArgList? ')' ARROW body=lambdaBody
     { $ast = new AstLambdaExpression($fa.list, $body.ast); }
  ;
@@ -331,6 +334,7 @@ codeBlockContent returns [ Ast ast ]
   ;
 
 codeBlock returns [ AstCodeBlock ast ]
+          locals  [ Scope scope = new Scope() ]
   : OPEN_CURLY CLOSE_CURLY
     { $ast = AstCodeBlock.empty(); }
   | OPEN_CURLY c+=codeBlockContent (c+=codeBlockContent)* CLOSE_CURLY

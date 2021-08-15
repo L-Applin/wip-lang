@@ -33,7 +33,7 @@ import ca.applin.selmer.lang.ast.type.AstTypePoly;
 import ca.applin.selmer.lang.ast.type.AstTypeSimple;
 import ca.applin.selmer.lang.ast.type.AstTypeTuple;
 
-public class AstBaseVisitor<T> implements AstVisitor<T> {
+public abstract class AstBaseVisitor<T> implements AstVisitor<T> {
 
     @Override
     public T visit(Ast ast) {

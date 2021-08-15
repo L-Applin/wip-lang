@@ -11,6 +11,7 @@ public class AstTypeFunction extends AstType {
     public AstTypeFunction(List<AstType> args, AstType ret) {
         this.args = args;
         this.ret = ret;
+        this.isFuncType = true;
     }
 
     @Override

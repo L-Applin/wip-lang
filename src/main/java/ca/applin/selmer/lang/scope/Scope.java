@@ -1,6 +1,7 @@
 package ca.applin.selmer.lang.scope;
 
 import ca.applin.selmer.lang.ast.AstFunctionDeclaration;
+import ca.applin.selmer.lang.ast.AstLambdaExpression.AstLambdaArgs;
 import ca.applin.selmer.lang.ast.AstVariableDeclaration;
 import ca.applin.selmer.lang.ast.type.AstType;
 import java.util.HashMap;
@@ -13,12 +14,19 @@ public class Scope {
     public Scope parent;
     public Map<String, AstVariableDeclaration> knownVariables;
     public Map<String, AstFunctionDeclaration> knownFunc;
+    public Map<String, AstLambdaArgs> knownLambdaArgs;
     public Set<AstType> knownTypes;
 
     public Scope() {
         knownVariables = new HashMap<>();
         knownTypes = new HashSet<>();
         knownFunc = new HashMap<>();
+        knownLambdaArgs = new HashMap<>();
+    }
+
+    public Scope(Scope parent) {
+        this();
+        this.parent = parent;
     }
 
     public AstVariableDeclaration getVarByName(String name) {
@@ -26,7 +34,7 @@ public class Scope {
     }
 
     public @NotNull AstVariableDeclaration getVarByNameOrThrow(String name, RuntimeException e) {
-        AstVariableDeclaration decl =knownVariables.get(name);
+        AstVariableDeclaration decl = knownVariables.get(name);
         if (decl == null) {
             throw e;
         }
@@ -34,7 +42,9 @@ public class Scope {
     }
 
     public boolean isAlreadyKnown(String name) {
-        return knownVariables.containsKey(name) || knownFunc.containsKey(name);
+        return knownVariables.containsKey(name)
+                || knownFunc.containsKey(name)
+                || knownLambdaArgs.containsKey(name);
     }
 
 

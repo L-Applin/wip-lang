@@ -3,7 +3,7 @@ package ca.applin.selmer.lang.ast;
 import ca.applin.selmer.lang.AstVisitor;
 import ca.applin.selmer.lang.ast.type.AstType;
 
-public abstract class AstExpression implements Ast {
+public abstract class AstExpression extends Ast {
     public AstType type;
     public boolean isReturn;
 

@@ -1,5 +1,7 @@
 package ca.applin.selmer.lang.typer;
 
+import static java.util.stream.Collectors.joining;
+
 import ca.applin.selmer.lang.AstBaseVisitor;
 import ca.applin.selmer.lang.ast.AstBinop;
 import ca.applin.selmer.lang.ast.AstCodeBlock;
@@ -7,6 +9,8 @@ import ca.applin.selmer.lang.ast.AstExpression;
 import ca.applin.selmer.lang.ast.AstFuncCall;
 import ca.applin.selmer.lang.ast.AstFunctionDeclaration;
 import ca.applin.selmer.lang.ast.AstFunctionDeclaration.AstFunctionArgs;
+import ca.applin.selmer.lang.ast.AstLambdaExpression;
+import ca.applin.selmer.lang.ast.AstLambdaExpression.AstLambdaArgs;
 import ca.applin.selmer.lang.ast.AstNumLitteral;
 import ca.applin.selmer.lang.ast.AstReturnExpression;
 import ca.applin.selmer.lang.ast.AstStringLitteral;
@@ -14,30 +18,31 @@ import ca.applin.selmer.lang.ast.AstVariableAssignement;
 import ca.applin.selmer.lang.ast.AstVariableDeclaration;
 import ca.applin.selmer.lang.ast.AstVariableReference;
 import ca.applin.selmer.lang.ast.type.AstType;
+import ca.applin.selmer.lang.ast.type.AstTypeFunction;
 import ca.applin.selmer.lang.ast.type.DoubleType;
 import ca.applin.selmer.lang.ast.type.IntType;
 import ca.applin.selmer.lang.scope.Scope;
 import java.util.List;
-import java.util.function.Function;
 
 public class Typer extends AstBaseVisitor<AstType> {
 
     private final ReturnStatementFinder finder = new ReturnStatementFinder();
 
-    private Scope scope;
+//    private Scope scope;
+//    private AstVariableDeclaration source;
 
-    public Typer(Scope scope) {
-        this.scope = scope;
-    }
+//    public Typer(Scope scope) {
+//        this.scope = scope;
+//    }
 
-    private void pushScope(Scope scope) {
-        scope.parent = this.scope;
-        this.scope = scope;
-    }
-
-    private void popScope() {
-        this.scope = this.scope.parent;
-    }
+//    private void pushScope(Scope scope) {
+//        scope.parent = this.scope;
+//        this.scope = scope;
+//    }
+//
+//    private void popScope() {
+//        this.scope = this.scope.parent;
+//    }
 
     @Override
     public AstType visit(AstStringLitteral astStringLitteral) {
@@ -65,7 +70,7 @@ public class Typer extends AstBaseVisitor<AstType> {
             return binop.type;
         }
         throw new MismatchTypeException("Binop '%s' operands types left:%s and right:%s are different"
-            .formatted(binop.operator, left.toString(), right.toString()));
+            .formatted(binop.operator, left.toString(), right.toString()), binop);
     }
 
     private boolean intAndDoubleMismatch(AstType left, AstType right) {
@@ -76,6 +81,7 @@ public class Typer extends AstBaseVisitor<AstType> {
     // todo
     @Override
     public AstType visit(AstFunctionDeclaration funcDecl) {
+        Scope scope = funcDecl.scope;
         if (scope.isAlreadyKnown(funcDecl.name)) {
             // @Error better error reporting with pos and code
             throw new RuntimeException("Function %s already declared."
@@ -87,7 +93,7 @@ public class Typer extends AstBaseVisitor<AstType> {
         }
 
         // @Improvement visit body only once for all args?
-        funcDecl.args.forEach(arg -> tryInferArg(arg, funcDecl.body));
+        // funcDecl.args.forEach(arg -> tryInferArg(arg, funcDecl.body));
 
         // infer return type
         AstType inferedReturnType = funcDecl.body.code.size() == 1
@@ -99,7 +105,7 @@ public class Typer extends AstBaseVisitor<AstType> {
     }
 
     private void tryInferArg(AstFunctionArgs arg, AstCodeBlock body) {
-
+        // todo
     }
 
     private boolean allTypeResolved(AstFunctionDeclaration funcDecl) {
@@ -108,10 +114,10 @@ public class Typer extends AstBaseVisitor<AstType> {
                 .map(AstFunctionArgs::type)
                 .allMatch(AstType::isKnown);
         if (!allArgsKnown) return false;
-
+        // todo
+        return true;
 
     }
-
 
     private AstType inferFunctionReturnType(AstFunctionDeclaration astFunctionDeclaration) {
         // find all return statement, make sure they are of the same type, return that type
@@ -138,39 +144,44 @@ public class Typer extends AstBaseVisitor<AstType> {
 
     @Override
     public AstType visit(AstCodeBlock codeBlock) {
-        pushScope(new Scope());
+//        pushScope(new Scope());
         codeBlock.code.forEach(cb -> cb.visit(this));
-        popScope();
+//        popScope();
         return AstType.NO_TYPE;
     }
 
     @Override
-    public AstType visit(AstVariableDeclaration astVariableDeclaration) {
-        // if type is declared and it has an init, we nee to check if type matches
-        if (scope.isAlreadyKnown(astVariableDeclaration.varName)) {
-            // @Error better error reporting with pos and code
-            throw new RuntimeException("Variable %s already declared."
-                    .formatted(astVariableDeclaration.varName));
+    public AstType visit(AstVariableDeclaration varDecl) {
+
+        // @Error better error reporting with pos and code
+//        if (scope.isAlreadyKnown(varDecl.varName)) {
+//            throw new RuntimeException("Variable %s already declared.".formatted(varDecl.varName));
+//        }
+
+        if (varDecl.initExpr instanceof AstLambdaExpression) {
+            inferLambdaVarDecl(varDecl);
+            return varDecl.type;
         }
 
-        AstType typeDeclared = astVariableDeclaration.type;
-        AstExpression initExpr = astVariableDeclaration.initExpr;
-        if (initExpr == null && !typeDeclared.isKnown()) {
-            throw new RuntimeException("[SHOULD NEVER HAPPEND] Variable %s has no init expr and type is unknown");
-        }
+
+        AstType typeDeclared = varDecl.type;
+        AstExpression initExpr = varDecl.initExpr;
+
+        assert (initExpr != null || typeDeclared.isKnown()) : "[SHOULD NEVER HAPPEND] Variable %s has no init expr and type is unknown".formatted(varDecl.varName);
 
         // case x : Int = 5
         if (initExpr != null && typeDeclared.isKnown()) {
+//            this.source = varDecl;
             AstType initExprInferedType = initExpr.visit(this);
             if (!typeDeclared.equals(initExprInferedType)) {
                 // @Error better error reporting with pos and code
                 throw new MismatchTypeException(
                         "%s\nVariable declaration %s was declared with [%s] but was infered to [%s] by expression %s"
-                        .formatted(astVariableDeclaration.toString(), astVariableDeclaration.varName, typeDeclared, initExprInferedType, initExpr.toString())
-                );
+                        .formatted(varDecl.toString(), varDecl.varName, typeDeclared, initExprInferedType, initExpr.toString()),
+                        varDecl);
             }
-            astVariableDeclaration.type = initExprInferedType;
-            scope.knownVariables.put(astVariableDeclaration.varName, astVariableDeclaration);
+            varDecl.type = initExprInferedType;
+//            scope.knownVariables.put(varDecl.varName, varDecl);
             return initExprInferedType;
         }
 
@@ -181,39 +192,85 @@ public class Typer extends AstBaseVisitor<AstType> {
 
         // case c := 1 + 2
         AstType initExprInferedType = initExpr.visit(this);
-        astVariableDeclaration.type = initExprInferedType;
-        scope.knownVariables.put(astVariableDeclaration.varName, astVariableDeclaration);
+        varDecl.type = initExprInferedType;
+//        scope.knownVariables.put(varDecl.varName, varDecl);
         return initExprInferedType;
     }
+
+    private void inferLambdaVarDecl(AstVariableDeclaration varDecl) {
+        AstLambdaExpression lambda = (AstLambdaExpression) varDecl.initExpr;
+        if (!varDecl.type.isKnown())  {
+            ensureAllArgsTypeAreKnown(varDecl.varName, lambda);
+        }
+        List<AstType> argTypes = lambda.args.stream().map(AstLambdaArgs::type).toList();
+        varDecl.type = new AstTypeFunction(argTypes, AstType.UNKNOWN);
+    }
+
+    private void ensureAllArgsTypeAreKnown(String decl, AstLambdaExpression lambda) {
+        lambda.args.forEach(arg -> {
+            if (arg.type() == null || !arg.type().isKnown) {
+                // @Error better error reporting
+                String msg = "Cannot infer type of Lambda expression '%s': type of arg %s is unknown".formatted(decl, arg.name());
+                throw new UnknownTypeException(msg, lambda);
+            }
+        });
+    }
+
+    @Override
+    public AstType visit(AstLambdaExpression lambdaExpr) {
+        if (lambdaExpr.type.isKnown()) return lambdaExpr.type;
+
+//        if (this.source != null) {
+//            if (this.source.type.isFuncType) {
+//                AstTypeFunction lambdaType = (AstTypeFunction) this.source.type;
+//                if (lambdaExpr.args.size() != lambdaType.args.size()) {
+//                    // @Error
+//                    String msg = "Lambda %s type was declared as %s with %n arg, but was given only %n arg : %s "
+//                            .formatted(
+//                                    this.source.varName,
+//                                    lambdaType,
+//                                    lambdaType.args.size(),
+//                                    lambdaExpr.args.size(),
+//                                    lambdaExpr.args.stream().map(arg -> arg.type().toString())
+//                                            .collect(joining(" ")));
+//                    throw new MismatchTypeException(msg, this.source);
+//                }
+//            }
+//        }
+//        // todo other checks
+//        this.source = null;
+        return lambdaExpr.type;
+    }
+
 
     @Override
     public AstType visit(AstVariableAssignement assign) {
         // @Error better error reporting with pos and code
-        AstVariableDeclaration decl = scope.getVarByNameOrThrow(assign.varName,
-            new RuntimeException("Variable %s not declared, cannot assign value %s to it."
-                    .formatted(assign.varName, assign.expr.toString())));
-        AstType varType = decl.type;
-        AstType exprType = assign.expr.visit(this);
-        if (!varType.equals(exprType)) {
-            // @Error better error reporting with pos and code
-            throw new MismatchTypeException("Cannot assign value %s of type %s to variable %s of type %s"
-                .formatted(assign.expr.toString(),
-                        exprType, assign.varName, varType));
-        }
-        decl.type = exprType;
+//        AstVariableDeclaration decl = scope.getVarByNameOrThrow(assign.varName,
+//            new RuntimeException("Variable %s not declared, cannot assign value %s to it."
+//                    .formatted(assign.varName, assign.expr.toString())));
+//        AstType varType = decl.type;
+//        AstType exprType = assign.expr.visit(this);
+//        if (!varType.equals(exprType)) {
+//            // @Error better error reporting with pos and code
+//            throw new MismatchTypeException("Cannot assign value %s of type %s to variable %s of type %s"
+//                .formatted(assign.expr.toString(), exprType, assign.varName, varType), assign);
+//        }
+//        decl.type = exprType;
         return super.visit(assign);
     }
 
     @Override
     public AstType visit(AstVariableReference ref) {
         // @Error better error reporting with pos and code
-        AstVariableDeclaration decl = scope.getVarByNameOrThrow(ref.varName,
-                new RuntimeException("Cannot find reference for variable %s".formatted(ref.varName)));
-        AstType typeKnown = scope.findTypeFor(ref.varName);
-        if (typeKnown.isKnown()) {
-            ref.type = typeKnown;
-            return ref.type;
-        }
-        return decl.type;
+//        AstVariableDeclaration decl = scope.getVarByNameOrThrow(ref.varName,
+//                new RuntimeException("Cannot find reference for variable %s".formatted(ref.varName)));
+//        AstType typeKnown = scope.findTypeFor(ref.varName);
+//        if (typeKnown.isKnown()) {
+//            ref.type = typeKnown;
+//            return ref.type;
+//        }
+//        return decl.type;
+        return super.visit(ref);
     }
 }
