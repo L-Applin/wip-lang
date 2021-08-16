@@ -1,5 +1,6 @@
 package ca.applin.selmer.lang.ast.type;
 
+import static ca.applin.selmer.lang.ast.Ast.DUMMY_TOKEN;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ca.applin.selmer.lang.ParserTestBase;
@@ -41,8 +42,8 @@ class AstTypeFunctionTest extends ParserTestBase {
         AstTypeFunction ast = (AstTypeFunction) getAstFor(toParse, typeContext);
         assertEquals(2, ast.args.size());
         assertNotNull(ast.ret);
-        assertEquals(new AstTypeSimple("Int"), ast.args.get(0));
-        assertEquals(new AstTypeSimple("String"), ast.ret);
+        assertEquals(new AstTypeSimple("Int", DUMMY_TOKEN, DUMMY_TOKEN), ast.args.get(0));
+        assertEquals(new AstTypeSimple("String", DUMMY_TOKEN, DUMMY_TOKEN), ast.ret);
     }
 
     @ParameterizedTest

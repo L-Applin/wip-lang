@@ -4,6 +4,7 @@ import ca.applin.selmer.lang.AstVisitor;
 import ca.applin.selmer.lang.ast.type.AstType;
 import ca.applin.selmer.lang.ast.type.DoubleType;
 import ca.applin.selmer.lang.ast.type.IntType;
+import org.antlr.v4.runtime.Token;
 
 public class AstNumLitteral extends AstExpression {
     public enum NumberType {
@@ -19,7 +20,8 @@ public class AstNumLitteral extends AstExpression {
     public String value;
     public NumberType numberType;
 
-    public AstNumLitteral(String value, NumberType numberType) {
+    public AstNumLitteral(String value, NumberType numberType, Token start, Token stop) {
+        super(start, stop);
         this.value = value;
         this.numberType = numberType;
         this.type = numberType.type;

@@ -203,7 +203,7 @@ public class Typer extends AstBaseVisitor<AstType> {
             ensureAllArgsTypeAreKnown(varDecl.varName, lambda);
         }
         List<AstType> argTypes = lambda.args.stream().map(AstLambdaArgs::type).toList();
-        varDecl.type = new AstTypeFunction(argTypes, AstType.UNKNOWN);
+        varDecl.type = new AstTypeFunction(argTypes, AstType.UNKNOWN, varDecl.start, varDecl.stop);
     }
 
     private void ensureAllArgsTypeAreKnown(String decl, AstLambdaExpression lambda) {

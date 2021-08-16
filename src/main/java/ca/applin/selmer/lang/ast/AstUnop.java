@@ -1,6 +1,7 @@
 package ca.applin.selmer.lang.ast;
 
 import ca.applin.selmer.lang.AstVisitor;
+import org.antlr.v4.runtime.Token;
 
 public class AstUnop extends AstExpression {
 
@@ -13,7 +14,8 @@ public class AstUnop extends AstExpression {
     public UnopType unopType;
 
     public AstUnop(AstExpression expr, Operator operator,
-            UnopType unopType) {
+            UnopType unopType, Token start, Token stop) {
+        super(start, stop);
         this.expr = expr;
         this.operator = operator;
         this.unopType = unopType;

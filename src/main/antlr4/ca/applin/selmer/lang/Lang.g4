@@ -12,6 +12,7 @@
 //   [expr]           Array/list type with fixed size : [Int, 32]
 //   [decl]           Pattern matching for sum type, function declaration
 //   [lang]           range litterals : '[0..10]' is the same as '[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]'
+//   [lang]           currying???
 //   [lang]           imports, dependency, libraries...
 
 // done
@@ -35,12 +36,11 @@ import Base ;
     import java.util.*;
 }
 
-
 // *****************************
 //  LANG
 // *****************************
 lang returns [ Ast ast ]
-  : (d+=decl)+ EOF { $ast = new AstCodeBlock($d.stream().map(tree-> tree.ast).toList()); }
+  : (d+=decl)+ EOF { $ast = new AstCodeBlock($d.stream().map(tree-> tree.ast).toList(), $start, $stop); }
   ;
 
 //code returns [ Ast ast ]
@@ -63,19 +63,19 @@ lang returns [ Ast ast ]
 type returns [ AstType ast ]
   : OPEN_PAREN t=type CLOSE_PAREN { $ast = $t.ast; }
   | <assoc=right> typeList ARROW r=type
-    { $ast = new AstTypeFunction($typeList.types, $r.ast); }
+    { $ast = new AstTypeFunction($typeList.types, $r.ast, $start, $stop); }
   | <assoc=right> a=type ARROW r=type
     { List<AstType> args = new ArrayList();
       args.add($a.ast);
-      $ast = new AstTypeFunction(args, $r.ast); }
+      $ast = new AstTypeFunction(args, $r.ast, $start, $stop); }
   | simpleType
-    { $ast = new AstTypeSimple($simpleType.s); }
+    { $ast = new AstTypeSimple($simpleType.s, $start, $stop); }
   | genericType
     { $ast = $genericType.ast; }
   | arrayType
     { $ast = $arrayType.ast; }
   | tupleType
-    { $ast = new AstTypeTuple($tupleType.types); }
+    { $ast = new AstTypeTuple($tupleType.types, $start, $stop); }
   | <assoc=right> sumType
     { $ast = $sumType.ast; }
   | UNIT
@@ -95,12 +95,12 @@ sumTypeElem returns [ AstSumType.SumTypeConstructor elem ]
 
 sumType returns [ AstSumType ast ]
   : ste+=sumTypeElem ('|' ste+=sumTypeElem)+
-    { $ast = new AstSumType($ste.stream().map(elem -> elem.elem).toList()); }
+    { $ast = new AstSumType($ste.stream().map(elem -> elem.elem).toList(), $start, $stop); }
   ;
 
 genericType returns [ AstTypePoly ast ]
   : simpleType (ID)+
-    { $ast = new AstTypePoly($simpleType.text, $ctx.ID().stream().map(ParseTree::getText).toList()); }
+    { $ast = new AstTypePoly($simpleType.text, $ctx.ID().stream().map(ParseTree::getText).toList(), $start, $stop); }
   ;
 
 simpleType returns [ String s ]
@@ -112,7 +112,7 @@ tupleType returns [ List<AstType> types ]
 
 arrayType returns [ AstType ast ]
   : '[' type ']'
-    { $ast = new AstTypeArray($type.ast); }
+    { $ast = new AstTypeArray($type.ast, $start, $stop); }
   ;
 
 
@@ -136,16 +136,16 @@ decl returns [ AstDeclaration ast ]
 
 typeDecl returns [ AstTypeDeclaration ast ]
   : gen=genericType DOUBLE_COLON KEYWORD_TYPE EQ t=type
-    { $ast = new AstTypeDeclaration($gen.ast.name, $gen.ast.polyArg, $t.ast); }
+    { $ast = new AstTypeDeclaration($gen.ast.name, $gen.ast.polyArg, $t.ast, $start, $stop); }
   | sim=simpleType DOUBLE_COLON KEYWORD_TYPE EQ t=type
-    { $ast = new AstTypeDeclaration($sim.s, new ArrayList(), $t.ast); }
+    { $ast = new AstTypeDeclaration($sim.s, new ArrayList(), $t.ast, $start, $stop); }
   ;
 
 structDecl returns [ AstTypeStruct ast ]
   : gen=genericType DOUBLE_COLON KEYWORD_TYPE '{' sml=structMemberList '}'
-    { $ast = new AstTypeStruct($gen.ast.name, $gen.ast.polyArg, $sml.list); }
+    { $ast = new AstTypeStruct($gen.ast.name, $gen.ast.polyArg, $sml.list, $start, $stop); }
   | sim=simpleType DOUBLE_COLON KEYWORD_TYPE '{' sml=structMemberList '}'
-    { $ast = new AstTypeStruct($sim.s, new ArrayList(), $sml.list); }
+    { $ast = new AstTypeStruct($sim.s, new ArrayList(), $sml.list, $start, $stop); }
   ;
 
 funcArg returns [ AstFunctionDeclaration.AstFunctionArgs ast ]
@@ -161,13 +161,13 @@ funcArgList returns [ List<AstFunctionDeclaration.AstFunctionArgs> list ]
 funcBody returns [ AstCodeBlock ast ]
   // empty body
   : OPEN_CURLY CLOSE_CURLY
-    { $ast = new AstCodeBlock(new ArrayList()); }
+    { $ast = new AstCodeBlock(new ArrayList(), $start, $stop); }
   // single expr no return
   | expr
-    { $ast =  new AstCodeBlock(new ArrayList(){{ add($expr.ast); }}); }
+    { $ast =  new AstCodeBlock(new ArrayList(){{ add($expr.ast); }}, $start, $stop); }
   // full code block, return
   | OPEN_CURLY c+=codeBlockContent (c+=codeBlockContent)* CLOSE_CURLY
-    { $ast = new AstCodeBlock($c.stream().map(code -> code.ast).toList()); }
+    { $ast = new AstCodeBlock($c.stream().map(code -> code.ast).toList(), $start, $stop); }
   ;
 
 funcDecl returns [ AstFunctionDeclaration ast ]
@@ -177,14 +177,14 @@ funcDecl returns [ AstFunctionDeclaration ast ]
              $name.text,
              _localctx.t == null ? AstType.UNKNOWN : $t.ast,
              new ArrayList() {{ add($arg.ast); }},
-             $body.ast);
+             $body.ast, $start, $stop);
      }
   | name=ID DOUBLE_COLON (t=type EQ)? '(' fa=funcArgList? ')' ARROW body=funcBody
     { $ast = new AstFunctionDeclaration(
               $name.text,
               _localctx.t  == null ? AstType.UNKNOWN : $t.ast,
               _localctx.fa == null ? new ArrayList() : $fa.list,
-              $body.ast);
+              $body.ast, $start, $stop);
     }
  ;
 
@@ -195,19 +195,19 @@ structMemberList returns [ List<AstStructMemberDeclaration> list ]
 
 structMember returns [ AstStructMemberDeclaration ast ]
   : varDecl
-    { $ast = new AstStructMemberDeclaration($varDecl.ast.varName, $varDecl.ast.type, $varDecl.ast.initExpr); }
+    { $ast = new AstStructMemberDeclaration($varDecl.ast.varName, $varDecl.ast.type, $varDecl.ast.initExpr, $start, $stop); }
   | inferedVarDecl
-    { $ast = new AstStructMemberDeclaration($inferedVarDecl.ast.varName, $inferedVarDecl.ast.type, $inferedVarDecl.ast.initExpr); }
+    { $ast = new AstStructMemberDeclaration($inferedVarDecl.ast.varName, $inferedVarDecl.ast.type, $inferedVarDecl.ast.initExpr, $start, $stop); }
   ;
 
 inferedVarDecl returns [ AstVariableDeclaration ast ]
   : id=ID COLON_EQ e=expr
-    { $ast = new AstVariableDeclaration($id.text, AstType.UNKNOWN, $e.ast); }
+    { $ast = new AstVariableDeclaration($id.text, AstType.UNKNOWN, $e.ast, $start, $stop); }
   ;
 
 varDecl returns [ AstVariableDeclaration ast ]
   : id=ID COLON t=type (EQ ex=expr)?
-    { $ast = new AstVariableDeclaration($id.text, $t.ast, $ctx.expr() == null ? null : $ex.ast); }
+    { $ast = new AstVariableDeclaration($id.text, $t.ast, $ctx.expr() == null ? null : $ex.ast, $start, $stop); }
   ;
 
 
@@ -225,40 +225,40 @@ expr returns [ AstExpression ast ]
   : OPEN_PAREN ex=expr CLOSE_PAREN
     { $ast = $ex.ast; }
   | left=expr DOT right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.DOT); }
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.DOT, $start, $right.stop); }
   | left=expr MOD right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.MOD); }
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.MOD, $start, $right.stop); }
   | left=expr op=(DIV | TIMES) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text), $start, $right.stop); }
   | left=expr op=(MINUS | PLUS) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text), $start, $right.stop); }
   | left=expr op=(BIT_OR | BIT_AND) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text), $start, $right.stop); }
   | left=expr op=(LOGICAL_OR | LOGICAL_AND) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text), $start, $right.stop); }
   | left=expr op=(GT | LT | GT_EQ | LT_EQ) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text), $start, $right.stop); }
   | left=expr op=(DOUBLE_EQ | NEQ) right=expr
-    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text)); }
+    { $ast = new AstBinop($left.ast, $right.ast, Operator.from($op.text), $start, $right.stop); }
   | unop ex=expr
-    { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.PRE); }
+    { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.PRE, $start, $stop); }
   | ex=expr unop
-    { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.POST); }
+    { $ast = new AstUnop($ex.ast, Operator.from($unop.text), AstUnop.UnopType.POST, $start, $stop); }
   | lambdaExpression
     { $ast = $lambdaExpression.ast; }
   | OPEN_PAREN tupleExprs+=expr (COMMA tupleExprs+=expr)* CLOSE_PAREN
   | OPEN_SQUARE CLOSE_SQUARE
-    { $ast = new AstArrayLitteral(); }
+    { $ast = new AstArrayLitteral($start, $stop); }
   | OPEN_SQUARE exprs+=expr (COMMA exprs+=expr)* CLOSE_SQUARE
-    { $ast = new AstArrayLitteral($exprs.stream().map(expr -> expr.ast).toList()); }
+    { $ast = new AstArrayLitteral($exprs.stream().map(expr -> expr.ast).toList(), $start, $stop); }
   | e=expr OPEN_SQUARE t=expr CLOSE_SQUARE
-    { $ast = new AstArrayAccessor($e.ast, $t.ast); }
+    { $ast = new AstArrayAccessor($e.ast, $t.ast, $start, $stop); }
   | name=expr OPEN_PAREN CLOSE_PAREN  // empty function call
-    { $ast = new AstFuncCall($name.ast, new ArrayList()); }
+    { $ast = new AstFuncCall($name.ast, new ArrayList(), $start, $stop); }
   | name=expr OPEN_PAREN args+=expr (COMMA args+=expr)*  CLOSE_PAREN // function call
-    { $ast = new AstFuncCall($name.ast, $args.stream().map(expr -> expr.ast).toList()); }
+    { $ast = new AstFuncCall($name.ast, $args.stream().map(expr -> expr.ast).toList(), $start, $stop); }
   | id=ID
-    { $ast = new AstVariableReference($id.text); }
+    { $ast = new AstVariableReference($id.text, $start, $stop); }
   | litteral
     { $ast = $litteral.ast; }
   ;
@@ -268,9 +268,9 @@ unop
   ;
 
 litteral returns [ AstExpression ast ]
-  : i=INT            { $ast = new AstNumLitteral($i.text, AstNumLitteral.NumberType.INTEGER); }
-  | d=DOUBLE         { $ast = new AstNumLitteral($d.text, AstNumLitteral.NumberType.FLOAT); }
-  | s=STRING_LITERAL { $ast = new AstStringLitteral($s.text); }
+  : i=INT            { $ast = new AstNumLitteral($i.text, AstNumLitteral.NumberType.INTEGER, $start, $stop); }
+  | d=DOUBLE         { $ast = new AstNumLitteral($d.text, AstNumLitteral.NumberType.FLOAT, $start, $stop); }
+  | s=STRING_LITERAL { $ast = new AstStringLitteral($s.text, $start, $stop); }
   ;
 
 lambdaArg returns [ AstLambdaExpression.AstLambdaArgs ast ]
@@ -286,23 +286,22 @@ lambdaArgList returns [ List<AstLambdaExpression.AstLambdaArgs> list ]
 lambdaBody returns [ AstCodeBlock ast ]
   // empty body
   : OPEN_CURLY CLOSE_CURLY
-    { $ast = new AstCodeBlock(new ArrayList()); }
+    { $ast = new AstCodeBlock(new ArrayList(), $start, $stop); }
   // single expr no return
   | expr
-    { $ast = new AstCodeBlock(new ArrayList(){{ add($expr.ast); }}); }
+    { $ast = new AstCodeBlock(new ArrayList(){{ add($expr.ast); }}, $start, $stop); }
   // full code block, return
   | OPEN_CURLY c+=codeBlockContent (c+=codeBlockContent)* CLOSE_CURLY
-    { $ast = new AstCodeBlock($c.stream().map(code -> code.ast).toList()); }
+    { $ast = new AstCodeBlock($c.stream().map(code -> code.ast).toList(), $start, $stop); }
   ;
 
 lambdaExpression returns [ AstLambdaExpression ast ]
   // single argument no parentheses around
   : arg=lambdaArg ARROW body=lambdaBody
-    { $ast = new AstLambdaExpression(new ArrayList() {{ add($arg.ast); }}, $body.ast);
-      $ast.setTokens($ctx.start, $ctx.stop);
+    { $ast = new AstLambdaExpression(new ArrayList() {{ add($arg.ast); }}, $body.ast, $start, $stop);
     }
   | '(' fa=lambdaArgList? ')' ARROW body=lambdaBody
-    { $ast = new AstLambdaExpression($fa.list, $body.ast); }
+    { $ast = new AstLambdaExpression($fa.list, $body.ast, $start, $stop); }
  ;
 
 
@@ -328,17 +327,16 @@ codeBlockContent returns [ Ast ast ]
   | d=decl
     { $ast = $d.ast; }
   | KEYWORD_RETURN e=expr
-    { $ast = new AstReturnExpression($e.ast); }
+    { $ast = new AstReturnExpression($e.ast, $start, $stop); }
   | e=expr
     { $ast = $e.ast; }
   ;
 
 codeBlock returns [ AstCodeBlock ast ]
-          locals  [ Scope scope = new Scope() ]
   : OPEN_CURLY CLOSE_CURLY
-    { $ast = AstCodeBlock.empty(); }
+    { $ast = AstCodeBlock.empty($start, $stop); }
   | OPEN_CURLY c+=codeBlockContent (c+=codeBlockContent)* CLOSE_CURLY
-    { $ast = new AstCodeBlock($c.stream().map(q -> q.ast).toList()); }
+    { $ast = new AstCodeBlock($c.stream().map(q -> q.ast).toList(), $start, $stop); }
   ;
 
 ifStatement returns [ AstIfStatement ast ]
@@ -346,29 +344,29 @@ ifStatement returns [ AstIfStatement ast ]
   : KEYWORD_IF e=expr ifBlock=codeBlockContent
     { List<Ast> code = new ArrayList();
       code.add($ifBlock.ast);
-      $ast = new AstIfStatement($e.ast, new AstCodeBlock(code), AstCodeBlock.empty());
+      $ast = new AstIfStatement($e.ast, new AstCodeBlock(code, $e.start, $e.stop), AstCodeBlock.empty($start, $stop), $start, $stop);
     } #singleIf
   | KEYWORD_IF e=expr ifBlock=codeBlock (KEYWORD_ELSE elseBlock=codeBlock)?
-    { $ast = new AstIfStatement($e.ast, $ifBlock.ast, $elseBlock.ast); } #multipleIf
+    { $ast = new AstIfStatement($e.ast, $ifBlock.ast, $elseBlock.ast, $start, $stop); } #multipleIf
   ;
 
 whileStatement returns [ AstWhileStatement ast ]
   : KEYWORD_WHILE e=expr codeBlock
-    { $ast = new AstWhileStatement($e.ast, $codeBlock.ast); }
+    { $ast = new AstWhileStatement($e.ast, $codeBlock.ast, $start, $stop); }
   ;
 
 forStatement returns [ AstForStatement ast ]
   : KEYWORD_FOR iter=expr cb=codeBlock
-    { $ast = new AstForStatement($iter.ast, $cb.ast); }
+    { $ast = new AstForStatement($iter.ast, $cb.ast, $start, $stop); }
   ;
 
 structMemberAssignement returns [ AstStructMemberAssignement ast ]
   : str+=ID (DOT str+=ID)+ EQ e=expr // multiple deref
-    { $ast = new AstStructMemberAssignement($str.stream().map(s -> s.getText()).toList(), $e.ast); }
+    { $ast = new AstStructMemberAssignement($str.stream().map(s -> s.getText()).toList(), $e.ast, $start, $stop); }
   ;
 
 variableAssignement returns [ AstVariableAssignement ast ]
   : id=ID EQ e=expr
-    { $ast = new AstVariableAssignement($id.text, $e.ast); }
+    { $ast = new AstVariableAssignement($id.text, $e.ast, $start, $e.stop); }
   ;
 

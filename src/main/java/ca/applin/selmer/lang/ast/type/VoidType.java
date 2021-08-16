@@ -4,25 +4,22 @@ import ca.applin.selmer.lang.AstVisitor;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.Token;
 
-public class UnknownType extends AstType {
+public class VoidType extends AstType {
 
-    public static AstType DEFAULT_INSTANCE = new UnknownType();
+    public static AstType DEFAULT_INSTANCE = new VoidType();
 
-    public UnknownType(Token start, Token stop) {
+    public VoidType(Token start, Token stop) {
         super(start, stop);
     }
 
-    public UnknownType() {
-        super(new CommonToken(-1, "<Unknown>"), new CommonToken(-1, "<Unknown>"));
-        this.isKnown = false;
+    public VoidType() {
+        this(new CommonToken(-1, "<Unknown>"), new CommonToken(-1, "<Unknown>"));
     }
-
 
     @Override
     public String toString() {
-        return "<UNKNOWN/>";
+        return "VOID";
     }
-
     public <T> T visit(AstVisitor<T> visitor) {
         return visitor.visit(this);
     }

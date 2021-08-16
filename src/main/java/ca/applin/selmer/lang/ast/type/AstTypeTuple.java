@@ -3,12 +3,14 @@ package ca.applin.selmer.lang.ast.type;
 import ca.applin.selmer.lang.AstVisitor;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.antlr.v4.runtime.Token;
 
 public class AstTypeTuple extends AstType {
 
     public List<AstType> types;
 
-    public AstTypeTuple(List<AstType> types) {
+    public AstTypeTuple(List<AstType> types, Token start, Token stop) {
+        super(start, stop);
         this.types = types;
     }
 

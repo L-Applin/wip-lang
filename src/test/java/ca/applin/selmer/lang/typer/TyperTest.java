@@ -5,13 +5,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import ca.applin.selmer.lang.ParserTestBase;
 import ca.applin.selmer.lang.ast.AstBinop;
 import ca.applin.selmer.lang.ast.AstCodeBlock;
-import ca.applin.selmer.lang.ast.AstExpression;
 import ca.applin.selmer.lang.ast.type.AstType;
 import ca.applin.selmer.lang.ast.type.AstTypeSimple;
 import ca.applin.selmer.lang.ast.type.IntType;
 import ca.applin.selmer.lang.ast.type.UnknownType;
-import ca.applin.selmer.lang.scope.Scope;
-import org.junit.Before;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,7 +34,7 @@ class TyperTest extends ParserTestBase {
     })
     public void testBinopIntTypeInference(String toParse) {
         AstBinop ast = (AstBinop) getAstFor(toParse, exprContext);
-        assertEquals(UnknownType.INSTANCE, ast.type);
+        assertEquals(UnknownType.DEFAULT_INSTANCE, ast.type);
         AstType typeInfered = typer.visit(ast);
         assertEquals(IntType.INSTANCE, typeInfered);
         assertEquals(IntType.INSTANCE, ast.type);

@@ -2,10 +2,17 @@ package ca.applin.selmer.lang.ast.type;
 
 import ca.applin.selmer.lang.AstVisitor;
 import java.util.Objects;
+import org.antlr.v4.runtime.Token;
 
 public class AstTypeSimple extends AstType {
     public String name;
+    public AstTypeSimple(String name, Token start, Token stop) {
+        super(start, stop);
+        this.name = name;
+    }
+
     public AstTypeSimple(String name) {
+        super(DUMMY_TOKEN, DUMMY_TOKEN);
         this.name = name;
     }
 

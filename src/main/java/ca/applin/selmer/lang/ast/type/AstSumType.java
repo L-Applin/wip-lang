@@ -2,6 +2,7 @@ package ca.applin.selmer.lang.ast.type;
 
 import ca.applin.selmer.lang.AstVisitor;
 import java.util.List;
+import org.antlr.v4.runtime.Token;
 
 public class AstSumType extends AstType {
     public static record SumTypeConstructor(String constructorName, List<AstType> args) {
@@ -14,7 +15,8 @@ public class AstSumType extends AstType {
 
     public List<SumTypeConstructor> constructors;
 
-    public AstSumType(List<SumTypeConstructor> constructors) {
+    public AstSumType(List<SumTypeConstructor> constructors, Token start, Token stop) {
+        super(start, stop);
         this.constructors = constructors;
     }
 

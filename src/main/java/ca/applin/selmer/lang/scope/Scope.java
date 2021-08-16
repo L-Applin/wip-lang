@@ -29,6 +29,16 @@ public class Scope {
         this.parent = parent;
     }
 
+    public boolean containsVar(String varName) {
+        if (knownVariables.containsKey(varName) || knownFunc.containsKey(varName)) {
+            return true;
+        }
+        if (parent == null) {
+            return false;
+        }
+        return parent.containsVar(varName);
+    }
+
     public AstVariableDeclaration getVarByName(String name) {
         return knownVariables.get(name);
     }

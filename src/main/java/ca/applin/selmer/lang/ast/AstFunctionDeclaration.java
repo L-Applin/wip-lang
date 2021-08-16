@@ -3,6 +3,7 @@ package ca.applin.selmer.lang.ast;
 import ca.applin.selmer.lang.AstVisitor;
 import ca.applin.selmer.lang.ast.type.AstType;
 import java.util.List;
+import org.antlr.v4.runtime.Token;
 
 public class AstFunctionDeclaration extends AstDeclaration {
     public static record AstFunctionArgs(String name, AstType type) {}
@@ -13,7 +14,8 @@ public class AstFunctionDeclaration extends AstDeclaration {
 
     public AstFunctionDeclaration(String name, AstType type,
             List<AstFunctionArgs> args,
-            AstCodeBlock body) {
+            AstCodeBlock body, Token start, Token stop) {
+        super(start, stop);
         this.name = name;
         this.type = type;
         this.args = args;

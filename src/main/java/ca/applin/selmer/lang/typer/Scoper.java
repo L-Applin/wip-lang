@@ -1,6 +1,7 @@
 package ca.applin.selmer.lang.typer;
 
 import ca.applin.selmer.lang.AstBaseVisitor;
+import ca.applin.selmer.lang.LangLexer;
 import ca.applin.selmer.lang.ast.Ast;
 import ca.applin.selmer.lang.ast.AstArrayAccessor;
 import ca.applin.selmer.lang.ast.AstArrayLitteral;
@@ -31,6 +32,8 @@ import ca.applin.selmer.lang.ast.type.AstTypeStruct;
 import ca.applin.selmer.lang.ast.type.AstTypeTuple;
 import ca.applin.selmer.lang.scope.Scope;
 import java.util.List;
+import org.antlr.v4.runtime.TokenSource;
+import org.antlr.v4.runtime.misc.Interval;
 
 /**
  * This {@link ca.applin.selmer.lang.AstVisitor visitor} sets new instances of {@link Scope scopes}
@@ -97,6 +100,7 @@ public class Scoper extends AstBaseVisitor<Ast> {
     public Ast visit(AstFunctionDeclaration funcDecl) {
         visitChildrenNodes(funcDecl, funcDecl.body);
         visitChildrenNodes(funcDecl, funcDecl.body);
+        funcDecl.scope.knownFunc.put(funcDecl.name, funcDecl);
         return funcDecl;
     }
 
@@ -163,6 +167,20 @@ public class Scoper extends AstBaseVisitor<Ast> {
 
     @Override
     public Ast visit(AstVariableAssignement varAssing) {
+        if (!varAssing.scope.containsVar(varAssing.varName)) {
+            LangLexer source = (LangLexer) varAssing.start.getTokenSource();
+            int startIndex = varAssing.expr.start.getStartIndex();
+            int stopIndex = varAssing.expr.stop.getStopIndex();
+            String str = source.getInputStream().getText(new Interval(startIndex, stopIndex));
+            throw new AssignementToUnknownVariableException(varAssing,
+                    "%s:[%s:%s] - cannot assign value '%s' to unknow variable '%s'.".formatted(
+                            source.getSourceName(),
+                            varAssing.start.getLine(),
+                            varAssing.start.getCharPositionInLine(),
+                            str,
+                            varAssing.varName)
+            );
+        }
         visitChildrenNodes(varAssing, varAssing.expr);
         return varAssing;
     }
@@ -172,12 +190,23 @@ public class Scoper extends AstBaseVisitor<Ast> {
         if (varDecl.initExpr != null) {
             visitChildrenNodes(varDecl, varDecl.initExpr);
         }
+        varDecl.scope.knownVariables.put(varDecl.varName, varDecl);
         return varDecl;
     }
 
     @Override
-    public Ast visit(AstVariableReference astVariableReference) {
-        return astVariableReference;
+    public Ast visit(AstVariableReference varRef) {
+        if (!varRef.scope.containsVar(varRef.varName)) {
+            // @Error better error reporting
+            throw new UnkownVariableReferenceException(varRef,
+                    "%s:[%s:%s] - cannot find variable '%s' in current scope.".formatted(
+                            varRef.start.getTokenSource().getSourceName(),
+                            varRef.start.getLine(),
+                            varRef.start.getCharPositionInLine(),
+                            varRef.varName)
+            );
+        }
+        return varRef;
     }
 
     @Override

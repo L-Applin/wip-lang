@@ -1,6 +1,7 @@
 package ca.applin.selmer.lang.ast;
 
 import ca.applin.selmer.lang.AstVisitor;
+import org.antlr.v4.runtime.Token;
 
 public class AstBinop extends AstExpression {
     public AstExpression left;
@@ -8,7 +9,8 @@ public class AstBinop extends AstExpression {
     public Operator operator;
 
     public AstBinop(AstExpression left, AstExpression right,
-            Operator operator) {
+            Operator operator, Token start, Token stop) {
+        super(start, stop);
         this.left = left;
         this.right = right;
         this.operator = operator;

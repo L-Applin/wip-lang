@@ -10,16 +10,28 @@ import ca.applin.selmer.lang.ast.AstExpression;
 import ca.applin.selmer.lang.ast.AstFunctionDeclaration;
 import ca.applin.selmer.lang.ast.AstStatement;
 import ca.applin.selmer.lang.ast.type.AstType;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Function;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 
 public class ParserTestBase {
 
+    protected TestInfo testInfo;
+
+    @BeforeEach
+    public void init(TestInfo testInfo) {
+        this.testInfo = testInfo;
+    }
+
     protected <T extends Ast> T getAstFor(String toParse, Function<LangParser, T> astTypeExtractor) {
         ANTLRInputStream input = new ANTLRInputStream(toParse);
+        input.name = testInfo.getTestMethod()
+                .map(Method::getName).orElse("<test suite method>");
         LangLexer lexer = new LangLexer(input);
         CommonTokenStream inputStream = new CommonTokenStream(lexer);
         LangParser parser = new LangParser(inputStream);
