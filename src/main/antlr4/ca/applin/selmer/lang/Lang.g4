@@ -154,7 +154,7 @@ funcArg returns [ AstFunctionDeclaration.AstFunctionArgs ast ]
   ;
 
 funcArgList returns [ List<AstFunctionDeclaration.AstFunctionArgs> list ]
-  : fa+=funcArg (',' fa+=funcArg)*
+  : fa+=funcArg (COMMA fa+=funcArg)*
     { $list = $fa.stream().map(c -> c.ast).toList(); }
   ;
 
@@ -179,7 +179,7 @@ funcDecl returns [ AstFunctionDeclaration ast ]
              new ArrayList() {{ add($arg.ast); }},
              $body.ast, $start, $stop);
      }
-  | name=ID DOUBLE_COLON (t=type EQ)? '(' fa=funcArgList? ')' ARROW body=funcBody
+  | name=ID DOUBLE_COLON (t=type EQ)? OPEN_PAREN fa=funcArgList? CLOSE_PAREN ARROW body=funcBody
     { $ast = new AstFunctionDeclaration(
               $name.text,
               _localctx.t  == null ? AstType.UNKNOWN : $t.ast,
@@ -341,11 +341,13 @@ codeBlock returns [ AstCodeBlock ast ]
 
 ifStatement returns [ AstIfStatement ast ]
   // single line if
-  : KEYWORD_IF e=expr ifBlock=codeBlockContent
+  : KEYWORD_IF e=expr ifBlock=codeBlock
+    { $ast = new AstIfStatement($e.ast, $ifBlock.ast, AstCodeBlock.empty($start, $stop), $start, $stop); } #ifNoElse
+  | KEYWORD_IF e=expr ifBlock=codeBlockContent
     { List<Ast> code = new ArrayList();
       code.add($ifBlock.ast);
       $ast = new AstIfStatement($e.ast, new AstCodeBlock(code, $e.start, $e.stop), AstCodeBlock.empty($start, $stop), $start, $stop);
-    } #singleIf
+    } #singleLineIfNoCurly
   | KEYWORD_IF e=expr ifBlock=codeBlock (KEYWORD_ELSE elseBlock=codeBlock)?
     { $ast = new AstIfStatement($e.ast, $ifBlock.ast, $elseBlock.ast, $start, $stop); } #multipleIf
   ;

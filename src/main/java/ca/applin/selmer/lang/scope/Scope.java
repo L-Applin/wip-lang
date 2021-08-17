@@ -8,20 +8,25 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.antlr.v4.runtime.misc.NotNull;
 
 public class Scope {
+    private static int id_gen = 0;
     public Scope parent;
     public Map<String, AstVariableDeclaration> knownVariables;
     public Map<String, AstFunctionDeclaration> knownFunc;
     public Map<String, AstLambdaArgs> knownLambdaArgs;
     public Set<AstType> knownTypes;
 
+    public int id;
+
     public Scope() {
         knownVariables = new HashMap<>();
         knownTypes = new HashSet<>();
         knownFunc = new HashMap<>();
         knownLambdaArgs = new HashMap<>();
+        id = id_gen++;
     }
 
     public Scope(Scope parent) {
@@ -51,28 +56,45 @@ public class Scope {
         return decl;
     }
 
-    public boolean isAlreadyKnown(String name) {
+    public boolean areAllKnow(String... name) {
+        return Stream.of(name)
+                .map(this::knowsId)
+                .reduce(Boolean.TRUE, Boolean::logicalAnd);
+    }
+
+    public boolean knowsId(String name) {
         return knownVariables.containsKey(name)
                 || knownFunc.containsKey(name)
                 || knownLambdaArgs.containsKey(name);
     }
 
 
-    public AstType findTypeFor(String identifier) {
+    public AstType findTypeForVar(String identifier) {
         AstVariableDeclaration decl = knownVariables.get(identifier);
         if (decl != null) {
             return decl.type;
         }
         if (parent != null) {
-            return parent.findTypeFor(identifier);
+            return parent.findTypeForVar(identifier);
         }
         return AstType.UNKNOWN;
     }
 
-    public boolean containsKey(String key) {
-        if (knownVariables.containsKey(key)) return true;
-        if (parent != null)                  return parent.containsKey(key);
+    public boolean containsId(String key) {
+        if (keyIsKnown(key)) return true;
+        if (parent != null)  return parent.containsId(key);
         return false;
     }
 
+    public boolean keyIsKnown(String key) {
+        return knownVariables.containsKey(key)
+                || knownFunc.containsKey(key)
+                || knownLambdaArgs.containsKey(key)
+                ;
+    }
+
+    @Override
+    public String toString() {
+        return "Scope:%d".formatted(id);
+    }
 }

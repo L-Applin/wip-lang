@@ -41,10 +41,10 @@ import org.antlr.v4.runtime.misc.Interval;
  */
 public class Scoper extends AstBaseVisitor<Ast> {
 
-    private void visitChildrenNodes(Ast parent, Ast child) {
+    private Ast visitChildrenNodes(Ast parent, Ast child) {
         child.parent = parent;
         child.scope = parent.scope;
-        child.visit(this);
+        return child.visit(this);
     }
 
     private void visitChildrenNodes(Ast parent, Ast ... childrens) {
@@ -54,7 +54,6 @@ public class Scoper extends AstBaseVisitor<Ast> {
     private void visitChildrenNodes(Ast parent, List<? extends Ast> childrens) {
         for (Ast child : childrens) { visitChildrenNodes(parent, child); }
     }
-
 
     @Override
     public Ast visit(AstArrayAccessor arrayAst) {
@@ -76,10 +75,13 @@ public class Scoper extends AstBaseVisitor<Ast> {
 
     @Override
     public Ast visit(AstCodeBlock codeBlock) {
-        Ast parent = codeBlock.parent;
-        Scope parentScope = parent == null ? null : parent.scope;
-        codeBlock.scope = new Scope(parentScope);
-        visitChildrenNodes(codeBlock, codeBlock.code);
+        Ast previousAst = codeBlock;
+        for (Ast child : codeBlock.code) {
+            child.parent = codeBlock;
+            child.scope.parent = previousAst.scope;
+            child.visit(this);
+            previousAst = child;
+        }
         return codeBlock;
     }
 
@@ -99,15 +101,13 @@ public class Scoper extends AstBaseVisitor<Ast> {
     @Override
     public Ast visit(AstFunctionDeclaration funcDecl) {
         visitChildrenNodes(funcDecl, funcDecl.body);
-        visitChildrenNodes(funcDecl, funcDecl.body);
         funcDecl.scope.knownFunc.put(funcDecl.name, funcDecl);
         return funcDecl;
     }
 
     @Override
     public Ast visit(AstIfStatement ifStmt) {
-        visitChildrenNodes(ifStmt, ifStmt.check);
-        visitChildrenNodes(ifStmt, ifStmt.thenBlock);
+        visitChildrenNodes(ifStmt, ifStmt.check, ifStmt.thenBlock);
         if (ifStmt.elseBlock != null ) visitChildrenNodes(ifStmt, ifStmt.elseBlock);
         return ifStmt;
     }
@@ -155,6 +155,7 @@ public class Scoper extends AstBaseVisitor<Ast> {
 
     @Override
     public Ast visit(AstTypeDeclaration astTypeDeclaration) {
+//        createNewScope(astTypeDeclaration);
         visitChildrenNodes(astTypeDeclaration, astTypeDeclaration.type);
         return astTypeDeclaration;
     }
@@ -170,7 +171,9 @@ public class Scoper extends AstBaseVisitor<Ast> {
         if (!varAssing.scope.containsVar(varAssing.varName)) {
             LangLexer source = (LangLexer) varAssing.start.getTokenSource();
             int startIndex = varAssing.expr.start.getStartIndex();
-            int stopIndex = varAssing.expr.stop.getStopIndex();
+            int stopIndex = varAssing.expr.stop == null
+                    ? varAssing.expr.start.getStopIndex()
+                    : varAssing.expr.stop.getStopIndex();
             String str = source.getInputStream().getText(new Interval(startIndex, stopIndex));
             throw new AssignementToUnknownVariableException(varAssing,
                     "%s:[%s:%s] - cannot assign value '%s' to unknow variable '%s'.".formatted(
@@ -187,6 +190,7 @@ public class Scoper extends AstBaseVisitor<Ast> {
 
     @Override
     public Ast visit(AstVariableDeclaration varDecl) {
+//        createNewScope(varDecl);
         if (varDecl.initExpr != null) {
             visitChildrenNodes(varDecl, varDecl.initExpr);
         }
@@ -199,7 +203,8 @@ public class Scoper extends AstBaseVisitor<Ast> {
         if (!varRef.scope.containsVar(varRef.varName)) {
             // @Error better error reporting
             throw new UnkownVariableReferenceException(varRef,
-                    "%s:[%s:%s] - cannot find variable '%s' in current scope.".formatted(
+                    "%s:[%s:%s] - %s - cannot find variable '%s' in current scope.".formatted(
+                            varRef.parent.toString(),
                             varRef.start.getTokenSource().getSourceName(),
                             varRef.start.getLine(),
                             varRef.start.getCharPositionInLine(),

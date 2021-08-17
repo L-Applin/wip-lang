@@ -82,7 +82,7 @@ public class Typer extends AstBaseVisitor<AstType> {
     @Override
     public AstType visit(AstFunctionDeclaration funcDecl) {
         Scope scope = funcDecl.scope;
-        if (scope.isAlreadyKnown(funcDecl.name)) {
+        if (scope.knowsId(funcDecl.name)) {
             // @Error better error reporting with pos and code
             throw new RuntimeException("Function %s already declared."
                     .formatted(funcDecl.name));

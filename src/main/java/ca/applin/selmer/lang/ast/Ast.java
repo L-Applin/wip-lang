@@ -16,6 +16,7 @@ public abstract class Ast {
     public Ast(Token start, Token stop) {
         this.start = start;
         this.stop = stop;
+        this.scope = new Scope();
     }
 
     public void setTokens(Token start, Token stop) {
