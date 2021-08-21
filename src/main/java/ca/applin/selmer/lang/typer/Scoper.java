@@ -24,12 +24,14 @@ import ca.applin.selmer.lang.ast.AstVariableDeclaration;
 import ca.applin.selmer.lang.ast.AstVariableReference;
 import ca.applin.selmer.lang.ast.AstWhileStatement;
 import ca.applin.selmer.lang.ast.type.AstSumType;
+import ca.applin.selmer.lang.ast.type.AstType;
 import ca.applin.selmer.lang.ast.type.AstTypeArray;
 import ca.applin.selmer.lang.ast.type.AstTypeFunction;
 import ca.applin.selmer.lang.ast.type.AstTypePoly;
 import ca.applin.selmer.lang.ast.type.AstTypeSimple;
 import ca.applin.selmer.lang.ast.type.AstTypeStruct;
 import ca.applin.selmer.lang.ast.type.AstTypeTuple;
+import ca.applin.selmer.lang.ast.type.IntType;
 import ca.applin.selmer.lang.scope.Scope;
 import java.util.List;
 import org.antlr.v4.runtime.TokenSource;
@@ -87,6 +89,10 @@ public class Scoper extends AstBaseVisitor<Ast> {
 
     @Override
     public Ast visit(AstForStatement astForStatement) {
+        astForStatement.scope.knownVariables.put(AstForStatement.ITERATOR_VAR_REF,
+                new AstVariableDeclaration(AstForStatement.ITERATOR_VAR_REF, AstType.UNKNOWN, null, null, null));
+        astForStatement.scope.knownVariables.put(AstForStatement.ITERATOR_INDEX_VAR_REF,
+                new AstVariableDeclaration(AstForStatement.ITERATOR_INDEX_VAR_REF, IntType.INSTANCE, null, null, null));
         visitChildrenNodes(astForStatement, astForStatement.iterator, astForStatement.code);
         return astForStatement;
     }
@@ -100,8 +106,10 @@ public class Scoper extends AstBaseVisitor<Ast> {
 
     @Override
     public Ast visit(AstFunctionDeclaration funcDecl) {
-        visitChildrenNodes(funcDecl, funcDecl.body);
-        funcDecl.scope.knownFunc.put(funcDecl.name, funcDecl);
+        funcDecl.scope.addFuncDecl(funcDecl);
+        funcDecl.body.parent = funcDecl;
+        funcDecl.body.scope.parent = funcDecl.scope;
+        funcDecl.body.visit(this);
         return funcDecl;
     }
 
@@ -155,7 +163,6 @@ public class Scoper extends AstBaseVisitor<Ast> {
 
     @Override
     public Ast visit(AstTypeDeclaration astTypeDeclaration) {
-//        createNewScope(astTypeDeclaration);
         visitChildrenNodes(astTypeDeclaration, astTypeDeclaration.type);
         return astTypeDeclaration;
     }
@@ -200,7 +207,7 @@ public class Scoper extends AstBaseVisitor<Ast> {
 
     @Override
     public Ast visit(AstVariableReference varRef) {
-        if (!varRef.scope.containsVar(varRef.varName)) {
+        if (!varRef.scope.containsId(varRef.varName)) {
             // @Error better error reporting
             throw new UnkownVariableReferenceException(varRef,
                     "%s:[%s:%s] - %s - cannot find variable '%s' in current scope.".formatted(

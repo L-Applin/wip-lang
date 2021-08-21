@@ -13,6 +13,11 @@ public class AstWhileStatement extends AstStatement {
         this.code = code;
     }
 
+    @Override
+    public String toString() {
+        return "WhileStmt[check=%s code=%s]".formatted(check.toString(), code.toString());
+    }
+
     public <T> T visit(AstVisitor<T> visitor) {
         return visitor.visit(this);
     }

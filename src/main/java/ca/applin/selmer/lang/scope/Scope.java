@@ -17,6 +17,7 @@ public class Scope {
     public Map<String, AstVariableDeclaration> knownVariables;
     public Map<String, AstFunctionDeclaration> knownFunc;
     public Map<String, AstLambdaArgs> knownLambdaArgs;
+    public Map<String, AstFunctionDeclaration.AstFunctionArgs> knownFuncArgs;
     public Set<AstType> knownTypes;
 
     public int id;
@@ -26,12 +27,18 @@ public class Scope {
         knownTypes = new HashSet<>();
         knownFunc = new HashMap<>();
         knownLambdaArgs = new HashMap<>();
+        knownFuncArgs = new HashMap<>();
         id = id_gen++;
     }
 
     public Scope(Scope parent) {
         this();
         this.parent = parent;
+    }
+
+    public void addFuncDecl(AstFunctionDeclaration funcDecl) {
+        knownFunc.put(funcDecl.name, funcDecl);
+        funcDecl.args.forEach(arg -> funcDecl.body.scope.knownFuncArgs.put(arg.name(), arg));
     }
 
     public boolean containsVar(String varName) {
@@ -62,11 +69,14 @@ public class Scope {
                 .reduce(Boolean.TRUE, Boolean::logicalAnd);
     }
 
-    public boolean knowsId(String name) {
+    private boolean knowsId(String name) {
         return knownVariables.containsKey(name)
                 || knownFunc.containsKey(name)
-                || knownLambdaArgs.containsKey(name);
+                || knownFuncArgs.containsKey(name)
+                || knownLambdaArgs.containsKey(name)
+                ;
     }
+
 
 
     public AstType findTypeForVar(String identifier) {
@@ -81,16 +91,9 @@ public class Scope {
     }
 
     public boolean containsId(String key) {
-        if (keyIsKnown(key)) return true;
+        if (knowsId(key)) return true;
         if (parent != null)  return parent.containsId(key);
         return false;
-    }
-
-    public boolean keyIsKnown(String key) {
-        return knownVariables.containsKey(key)
-                || knownFunc.containsKey(key)
-                || knownLambdaArgs.containsKey(key)
-                ;
     }
 
     @Override

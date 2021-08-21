@@ -8,8 +8,8 @@ public class AstBinop extends AstExpression {
     public AstExpression right;
     public Operator operator;
 
-    public AstBinop(AstExpression left, AstExpression right,
-            Operator operator, Token start, Token stop) {
+    public AstBinop(AstExpression left, AstExpression right, Operator operator,
+            Token start, Token stop) {
         super(start, stop);
         this.left = left;
         this.right = right;
@@ -18,8 +18,8 @@ public class AstBinop extends AstExpression {
 
     @Override
     public String toString() {
-        return "(binop op=%s %sleft=%s right=%s)".formatted(
-                operator + ":" +operator.str,
+        return "Binop[op=%s %sleft=%s right=%s]".formatted(
+                operator + ":(" + operator.str + ")",
                 type.isKnown() ? "type:" + type.toString() +" ": "",
                 left.toString(),
                 right.toString()

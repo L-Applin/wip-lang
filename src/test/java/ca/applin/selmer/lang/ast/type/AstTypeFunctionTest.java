@@ -47,7 +47,7 @@ class AstTypeFunctionTest extends ParserTestBase {
     }
 
     @ParameterizedTest
-    @DisplayName("Sum types, ")
+    @DisplayName("Sum types")
     @ValueSource(strings = {
             "First | Second",
             "First A | Second",

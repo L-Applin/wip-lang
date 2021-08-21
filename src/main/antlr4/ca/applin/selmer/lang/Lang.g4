@@ -1,6 +1,7 @@
 // todo
 //   [bug:type/fun]   Unit type '()' breaks empty function call 'myFunc()'
 //   [decl]           const wit '::' : 'myConst :: 12' 'myConst :: Int = 12'
+//   [stmt]           syntax to rename default `it` and `it_index`
 //   [expr]           ternary expression: 'x = x > 0 ? x : -x'
 //   [expr]           struct instanciation
 //   [type]           fixed size types: s8, u8, s16, u16, s24, u24, s32, u32, s64, u64, f32, f64

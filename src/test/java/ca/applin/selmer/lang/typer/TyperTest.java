@@ -19,7 +19,6 @@ class TyperTest extends ParserTestBase {
 
     private Typer typer = new Typer();
 
-
     @Test
     public void equalTypes() {
         assertEquals(IntType.INSTANCE, new AstTypeSimple("Int"));
@@ -53,7 +52,7 @@ class TyperTest extends ParserTestBase {
         """
     })
     void testVariableDecl(String toParse) {
-        AstCodeBlock codeBlock = (AstCodeBlock) getAstFor(toParse, codeBlockContext);
+        AstCodeBlock codeBlock = getAstFor(toParse, codeBlockContext);
         typer.visit(codeBlock);
         System.out.println(codeBlock);
     }

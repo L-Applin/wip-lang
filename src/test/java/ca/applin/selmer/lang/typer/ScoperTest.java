@@ -2,12 +2,16 @@ package ca.applin.selmer.lang.typer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import ca.applin.selmer.lang.LangParser.CodeBlockContext;
 import ca.applin.selmer.lang.ParserTestBase;
 import ca.applin.selmer.lang.ast.AstCodeBlock;
+import ca.applin.selmer.lang.ast.AstFunctionDeclaration;
 import ca.applin.selmer.lang.ast.AstIfStatement;
 import ca.applin.selmer.lang.ast.AstVariableDeclaration;
+import ca.applin.selmer.lang.ast.AstWhileStatement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -45,10 +49,9 @@ class ScoperTest extends ParserTestBase {
               } 
             }       
             """
-
     })
-        // this test the common structures of the created ASTs, do not change the test input code, it will make the test fail
-    void testScopeOfIfBlock(String toParse) {
+    // this test the common structures of the created ASTs, do not change the test input code, it will make the test fail
+    void testScopeIfBlock(String toParse) {
         AstCodeBlock ast = getAstFor(toParse, codeBlockContext);
         assertDoesNotThrow( () -> ast.visit(scoper));
         AstIfStatement ifStmt = ((AstIfStatement) ast.code.get(1));
@@ -61,7 +64,40 @@ class ScoperTest extends ParserTestBase {
         }
     }
 
-    @DisplayName("Nested if statement should have reference to all variables declared in all parent scopes")
+    @DisplayName("While statements should recognize variables declared in parent scope")
+    @ParameterizedTest
+    @ValueSource(strings = {
+            """
+            {
+              2 + 2
+              e: Int = 20
+              while e > 10 {
+                y : Int = 10
+                e = e + y 
+              }
+            }
+            """,
+            """
+            {
+              x := 12
+              e: Int = 20.0
+              while e > 10.0 {
+                y : Int = 10
+                e = e + y 
+              } 
+            }       
+            """
+    })
+    void testScopeWhileBlock(String toParse) {
+        AstCodeBlock ast = getAstFor(toParse, codeBlockContext);
+        assertDoesNotThrow( () -> ast.visit(scoper));
+        AstWhileStatement whileStmt = (AstWhileStatement) ast.code.get(2);
+        assertTrue(whileStmt.check.scope.containsId("e"));
+        assertTrue(whileStmt.code.scope.containsId("e"));
+        whileStmt.code.forEach(block -> assertTrue(block.scope.containsId("e")));
+    }
+
+    @DisplayName("Nested if/while/for statement should have reference to all variables declared in all parent scopes")
     @ParameterizedTest
     @ValueSource(strings = {
             """
@@ -79,7 +115,14 @@ class ScoperTest extends ParserTestBase {
                 y : Int = 10
                 e = e + y 
               } else {
+                for [1, 2, 3] {
+                  e = e + it + it_index
+                }
                 z : Int = 30
+                while z < 100 {
+                  e = e * 2
+                  println("toto", z, e)
+                }
                 e = e + z
               } 
             }       
@@ -184,12 +227,67 @@ class ScoperTest extends ParserTestBase {
                   x = y + z
                 }
               }
+            """,
             """
-
+            {
+              println :: String -> Unit = str -> {  }
+              x: Int = 0
+              while x < 10 {
+                println("x:%d", x);
+                x = y + 1
+              }
+            }
+            """
     })
     void scoperErrorTest(String toParse) {
         UnkownVariableReferenceException e = assertThrows(UnkownVariableReferenceException.class,
                 () -> scoper.visit(getAstFor(toParse, codeBlockContext)));
         assertEquals("y", e.varRef.varName);
     }
+
+    @DisplayName("Function arguments should be conatained in their body scope")
+    @ParameterizedTest
+    @ValueSource(strings = {
+            """
+            println :: String -> String = str -> { "prinln:" + str }
+            """,
+            """
+            println :: String -> String = str -> "prinln:" + str
+            """,
+            """
+            println :: (Int, Int) -> String = (a, b) -> {
+              x: Int = a + b
+              x = x + 1
+              return x + 10
+            }
+            """
+            })
+    public void testKnowsFuncArg(String toParse) {
+        AstFunctionDeclaration funcDecl = getAstFor(toParse, funcDeclContext);
+        assertDoesNotThrow(() -> funcDecl.visit(scoper));
+    }
+
+    @DisplayName("Function can refer variable outside their body (Closure scope)")
+    @ParameterizedTest
+    @ValueSource(strings = {
+            """
+            {
+              x: Int = 12
+              addOutside :: Int -> Int = y -> x + y
+            }
+            """,
+            """
+            {
+              x: Int = 12
+              y: Int = 30
+              addOutside :: () -> x + y
+              z: Int = addOutside()
+            }
+            """
+    })
+    public void testClosureScope(String toParse) {
+        AstCodeBlock codeBlock = getAstFor(toParse, codeBlockContext);
+        assertDoesNotThrow(() -> codeBlock.visit(scoper));
+    }
+
 }

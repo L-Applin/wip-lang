@@ -5,6 +5,9 @@ import org.antlr.v4.runtime.Token;
 
 public class AstForStatement extends AstStatement {
 
+    public static final String ITERATOR_VAR_REF = "it";
+    public static final String ITERATOR_INDEX_VAR_REF = "it_index";
+
     public AstExpression iterator;
     public AstCodeBlock code;
 
@@ -12,6 +15,11 @@ public class AstForStatement extends AstStatement {
         super(start, stop);
         this.iterator = iterator;
         this.code = code;
+    }
+
+    @Override
+    public String toString() {
+        return "ForStmt[iter=%s code=%s]".formatted(iterator.toString(), code.toString());
     }
 
     @Override
